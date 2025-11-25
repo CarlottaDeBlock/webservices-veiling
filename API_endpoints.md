@@ -5,7 +5,7 @@
   Haal alle gebruikers op  
   Response: JSON array van gebruikers
 
-- `GET /api/users/{user_id}`  
+- `GET /api/users/:id`  
   Haal specifieke gebruiker op  
   Response: JSON gebruiker object
 
@@ -14,17 +14,53 @@
   Body: JSON gebruiker data  
   Response: Aangemaakte gebruiker object
 
+- `PUT /api/users/:id`  
+  Een bedrijf aanpassen 
+
+- `DELETE /api/users/:id`  
+  Een bedrijf verwijderen 
+
+- `GET /api/users/:id/auctions`  
+  Auctions van een specifieke gebruiker opvragen 
+
+- `GET /api/users/:id/bids`  
+  Biedingen van een specifieke gebruiker opvragen 
+
+- `GET /api/users/:id/reviews`  
+  Reviews van een specifieke gebruiker opvragen 
+
 ## Companies
 - `GET /api/companies`  
   Haal alle bedrijven op  
   Response: JSON array van bedrijven
+
+- `GET /api/companies/:id`  
+  Specifiek bedrijf opvragen  
+  Response: JSON array van bedrijven
+
+- `POST /api/companies`  
+  Maak nieuwe bedrijf aan 
+  Body: JSON bedrijf data  
+  Response: Aangemaakte bedrijf object
+
+- `PUT /api/companies/:id`  
+  Een bedrijf aanpassen 
+
+- `DELETE /api/companies/:id`  
+  Een bedrijf verwijderen 
+
+- `GET /api/companies/:id/contracts`  
+  Contracts van een specifieke bedrijf opvragen 
+
+- `GET /api/companies/:id/invoices`  
+  Facturen van een specifieke bedrijf opvragen 
 
 ## Auctions
 - `GET /api/auctions`  
   Haal alle veilingen op (opties filteren via query params category, status)  
   Response: JSON array van veilingen
 
-- `GET /api/auctions/{auction_id}`  
+- `GET /api/auctions/:id`  
   Haal specifieke veiling op  
   Response: JSON veiling object
 
@@ -33,13 +69,16 @@
   Body: JSON veiling data  
   Response: Aangemaakte veiling
 
+- `DELETE /api/auctions/:id`  
+  Een veiling verwijderen 
+
 ## Bids
 - `POST /api/bids`  
   Plaats nieuw bod  
   Body: JSON bod data (auction_id, bidder_id, amount)  
   Response: Nieuw bod object
 
-- `GET /api/bids/auction/{auction_id}`  
+- `GET /api/bids/auction/:id`  
   Haal biedingen van veiling op  
   Response: Array van biedingen
 
@@ -64,11 +103,3 @@
 
 - `POST /api/reviews`  
   Voeg review toe
-
-## Offers
-- `GET /api/offers`  
-  Haal offerte aanvragen op
-
-- `POST /api/offers`  
-  Maak nieuwe offerte aanvraag
-
