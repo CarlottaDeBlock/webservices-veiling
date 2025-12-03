@@ -1,39 +1,127 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { LOTS, Lot } from '../data/mock_data';
 import { CreateLotDto, LotListResponseDto, LotResponseDto } from './lot.dto';
+import {
+  type DatabaseProvider,
+  InjectDrizzle,
+} from '../drizzle/drizzle.provider';
+import { eq } from 'drizzle-orm';
+import { lots } from '../drizzle/schema';
 
 @Injectable()
 export class LotService {
-  getAll(): LotListResponseDto {
-    return { items: LOTS };
+  async getAll(): Promise<LotListResponseDto> {
+    const rows = await this.db.query.lots.findMany();
+
+    const items: LotResponseDto[] = rows.map((row) => ({
+      lotId: row.lotId,
+      requestId: row.requestId,
+      requesterId: row.requesterId,
+      title: row.title,
+      description: row.description,
+      startTime: row.startTime,
+      endTime: row.endTime,
+      winnerId: row.winnerId,
+      category: row.category,
+      reservedPrice: row.reservedPrice,
+      buyPrice: row.buyPrice,
+      startBid: row.startBid,
+      status: row.status,
+      extraInformation: row.extraInformation,
+      isReversed: row.isReversed === 1,
+      canBidHigher: row.canBidHigher === 1,
+      createdAt: row.createdAt,
+    }));
+
+    return { items };
   }
 
-  getById(id: string): LotResponseDto {
-    const lot = LOTS.find((l) => l.lot_id === id);
-    if (!lot) throw new NotFoundException('Lot not found');
-    return lot;
-  }
+  async getById(id: number): Promise<LotResponseDto> {
+    const row = await this.db.query.lots.findFirst({
+      where: eq(lots.lotId, id),
+    });
 
-  create(data: CreateLotDto): LotResponseDto {
-    const newLot: Lot = {
-      ...data,
-      lot_id: String(Date.now()),
-      created_at: new Date(),
+    if (!row) {
+      throw new NotFoundException('Lot not found');
+    }
+
+    return {
+      lotId: row.lotId,
+      requestId: row.requestId,
+      requesterId: row.requesterId,
+      title: row.title,
+      description: row.description,
+      startTime: row.startTime,
+      endTime: row.endTime,
+      winnerId: row.winnerId,
+      category: row.category,
+      reservedPrice: row.reservedPrice,
+      buyPrice: row.buyPrice,
+      startBid: row.startBid,
+      status: row.status,
+      extraInformation: row.extraInformation,
+      isReversed: row.isReversed === 1,
+      canBidHigher: row.canBidHigher === 1,
+      createdAt: row.createdAt,
     };
-    LOTS.push(newLot);
-    return newLot;
   }
 
-  updateById(id: string, data: CreateLotDto): LotResponseDto {
-    const index = LOTS.findIndex((l) => l.lot_id === id);
-    if (index === -1) throw new NotFoundException('Lot not found');
-    LOTS[index] = { ...LOTS[index], ...data };
-    return LOTS[index];
+  async create(data: CreateLotDto): Promise<LotResponseDto> {
+    const [inserted] = await this.db
+      .insert(lots)
+      .values({
+        requestId: data.requestId,
+        requesterId: data.requesterId,
+        title: data.title,
+        description: data.description,
+        startTime: data.startTime,
+        endTime: data.endTime,
+        winnerId: data.winnerId,
+        category: data.category,
+        reservedPrice: data.reservedPrice,
+        buyPrice: data.buyPrice,
+        startBid: data.startBid,
+        status: data.status,
+        extraInformation: data.extraInformation,
+        isReversed: data.isReversed ? 1 : 0,
+        canBidHigher: data.canBidHigher ? 1 : 0,
+      })
+      .$returningId();
+
+    return this.getById(inserted.lotId);
   }
 
-  deleteById(id: string): void {
-    const index = LOTS.findIndex((l) => l.lot_id === id);
-    if (index === -1) throw new NotFoundException('Lot not found');
-    LOTS.splice(index, 1);
+  async updateById(id: number, data: CreateLotDto): Promise<LotResponseDto> {
+    await this.db
+      .update(lots)
+      .set({
+        requestId: data.requestId,
+        requesterId: data.requesterId,
+        title: data.title,
+        description: data.description,
+        startTime: data.startTime,
+        endTime: data.endTime,
+        winnerId: data.winnerId,
+        category: data.category,
+        reservedPrice: data.reservedPrice,
+        buyPrice: data.buyPrice,
+        startBid: data.startBid,
+        status: data.status,
+        extraInformation: data.extraInformation,
+        isReversed: data.isReversed ? 1 : 0,
+        canBidHigher: data.canBidHigher ? 1 : 0,
+      })
+      .where(eq(lots.lotId, id));
+
+    return this.getById(id);
   }
+
+  async deleteById(id: number): Promise<void> {
+    const [result] = await this.db.delete(lots).where(eq(lots.lotId, id));
+    if (result.affectedRows === 0) throw new NotFoundException('Lot not found');
+  }
+
+  constructor(
+    @InjectDrizzle()
+    private readonly db: DatabaseProvider,
+  ) {}
 }

@@ -21,32 +21,32 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Get()
-  getAll(): UserListResponseDto {
+  async getAll(): Promise<UserListResponseDto> {
     return this.userService.getAll();
   }
 
   @Get(':id')
-  getById(@Param('id') id: string): UserResponseDto {
+  async getById(@Param('id') id: number): Promise<UserResponseDto> {
     return this.userService.getById(id);
   }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  create(@Body() createUserDto: CreateUserDto): UserResponseDto {
+  async create(@Body() createUserDto: CreateUserDto): Promise<UserResponseDto> {
     return this.userService.create(createUserDto);
   }
 
   @Put(':id')
-  update(
-    @Param('id') id: string,
+  async update(
+    @Param('id') id: number,
     @Body() updateUserDto: CreateUserDto,
-  ): UserResponseDto {
+  ): Promise<UserResponseDto> {
     return this.userService.updateById(id, updateUserDto);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  delete(@Param('id') id: string): void {
-    this.userService.deleteById(id);
+  async delete(@Param('id') id: number): Promise<void> {
+    await this.userService.deleteById(id);
   }
 }

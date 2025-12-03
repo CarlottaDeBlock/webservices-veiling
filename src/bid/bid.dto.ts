@@ -1,12 +1,12 @@
 export class CreateBidDto {
-  auction_id: string;
-  bidder_id: string;
-  amount: number;
+  auctionId: number;
+  bidderId: number;
+  amount: string;
 }
 
 export class BidResponseDto extends CreateBidDto {
-  bid_id: string;
-  bid_time: Date;
+  bidId: number;
+  bidTime: Date;
 }
 
 export class BidListResponseDto {

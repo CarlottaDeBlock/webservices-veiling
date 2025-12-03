@@ -1,0 +1,307 @@
+import { drizzle } from 'drizzle-orm/mysql2';
+import * as mysql from 'mysql2/promise';
+import * as schema from './schema';
+
+const connection = mysql.createPool({
+  uri: process.env.DATABASE_URL,
+  connectionLimit: 5,
+});
+
+const db = drizzle(connection, {
+  schema,
+  mode: 'default',
+});
+
+async function resetDatabase() {
+  console.log('🗑️ Resetting database...');
+
+  await db.delete(schema.reviews);
+  await db.delete(schema.invoices);
+  await db.delete(schema.contracts);
+  await db.delete(schema.bids);
+  await db.delete(schema.auctions);
+  await db.delete(schema.lots);
+  await db.delete(schema.users);
+  await db.delete(schema.companies);
+
+  console.log('✅ Database reset completed\n');
+}
+
+async function seedCompanies() {
+  console.log('🏢 Seeding companies...');
+
+  await db.insert(schema.companies).values([
+    {
+      companyId: 1,
+      name: 'Acme Logistics',
+      vatNumber: 'BE0123456789',
+      address: 'Industriepark 1',
+      city: 'Gent',
+      country: 'BE',
+      status: 'active',
+      peppolId: 'acme-logistics-peppol',
+      invoiceEmail: 'invoices@acme-logistics.test',
+    },
+    {
+      companyId: 2,
+      name: 'Global Supplies',
+      vatNumber: 'BE0987654321',
+      address: 'Havenstraat 10',
+      city: 'Antwerpen',
+      country: 'BE',
+      status: 'active',
+      peppolId: 'global-supplies-peppol',
+      invoiceEmail: 'billing@global-supplies.test',
+    },
+  ]);
+
+  console.log('✅ Companies seeded\n');
+}
+
+async function seedUsers() {
+  console.log('👤 Seeding users...');
+
+  await db.insert(schema.users).values([
+    {
+      userId: 1,
+      username: 'requester_anna',
+      email: 'anna.requester@test.dev',
+      password: 'hashed-password-1',
+      isProvider: 0,
+      rating: 5,
+      companyId: 1,
+      role: 'requester',
+      language: 'nl',
+    },
+    {
+      userId: 2,
+      username: 'provider_bob',
+      email: 'bob.provider@test.dev',
+      password: 'hashed-password-2',
+      isProvider: 1,
+      rating: 4,
+      companyId: 2,
+      role: 'provider',
+      language: 'nl',
+    },
+    {
+      userId: 3,
+      username: 'provider_chloe',
+      email: 'chloe.provider@test.dev',
+      password: 'hashed-password-3',
+      isProvider: 1,
+      rating: 5,
+      companyId: 2,
+      role: 'provider',
+      language: 'en',
+    },
+  ]);
+
+  console.log('✅ Users seeded\n');
+}
+
+async function seedLots() {
+  console.log('📦 Seeding lots...');
+
+  await db.insert(schema.lots).values([
+    {
+      lotId: 1,
+      requestId: 1001,
+      requesterId: 1,
+      title: 'Transport 10 pallets Gent → Antwerpen',
+      description: 'Verzending van 10 pallets niet-bederfbare goederen.',
+      startTime: new Date('2025-01-10T09:00:00.000Z'),
+      endTime: new Date('2025-01-10T17:00:00.000Z'),
+      winnerId: null,
+      category: 'transport',
+      reservedPrice: '800.00',
+      buyPrice: '1200.00',
+      startBid: '500.00',
+      status: 'open',
+      extraInformation: 'Laadplaats met dok, heftruck aanwezig.',
+      isReversed: 1,
+      canBidHigher: 1,
+    },
+    {
+      lotId: 2,
+      requestId: 1002,
+      requesterId: 1,
+      title: 'Opslagruimte 3 maanden',
+      description: 'Opslag van 20 pallets droge voeding.',
+      startTime: new Date('2025-02-01T08:00:00.000Z'),
+      endTime: new Date('2025-02-05T16:00:00.000Z'),
+      winnerId: null,
+      category: 'storage',
+      reservedPrice: '1500.00',
+      buyPrice: null,
+      startBid: '900.00',
+      status: 'open',
+      extraInformation: 'Magazijn met temperatuurcontrole niet nodig.',
+      isReversed: 1,
+      canBidHigher: 1,
+    },
+  ]);
+
+  console.log('✅ Lots seeded\n');
+}
+
+async function seedAuctions() {
+  console.log('🔨 Seeding auctions...');
+
+  await db.insert(schema.auctions).values([
+    {
+      auctionId: 1,
+      requestId: 1001,
+      startTime: new Date('2025-01-08T09:00:00.000Z'),
+      endTime: new Date('2025-01-09T17:00:00.000Z'),
+      status: 'open',
+    },
+    {
+      auctionId: 2,
+      requestId: 1002,
+      startTime: new Date('2025-01-20T09:00:00.000Z'),
+      endTime: new Date('2025-01-22T17:00:00.000Z'),
+      status: 'open',
+    },
+  ]);
+
+  console.log('✅ Auctions seeded\n');
+}
+
+async function seedBids() {
+  console.log('💶 Seeding bids...');
+
+  await db.insert(schema.bids).values([
+    {
+      bidId: 1,
+      auctionId: 1,
+      bidderId: 2,
+      amount: '750.00',
+      bidTime: new Date('2025-01-08T10:00:00.000Z'),
+    },
+    {
+      bidId: 2,
+      auctionId: 1,
+      bidderId: 3,
+      amount: '700.00',
+      bidTime: new Date('2025-01-08T11:30:00.000Z'),
+    },
+    {
+      bidId: 3,
+      auctionId: 2,
+      bidderId: 2,
+      amount: '1200.00',
+      bidTime: new Date('2025-01-21T09:30:00.000Z'),
+    },
+  ]);
+
+  console.log('✅ Bids seeded\n');
+}
+
+async function seedContracts() {
+  console.log('📄 Seeding contracts...');
+
+  await db.insert(schema.contracts).values([
+    {
+      contractId: 1,
+      auctionId: 1,
+      providerId: 3, // Chloe als winnaar
+      requesterId: 1,
+      agreedPrice: '700.00',
+      startDate: new Date('2025-01-15T08:00:00.000Z'),
+      endDate: new Date('2025-01-16T18:00:00.000Z'),
+      status: 'active',
+    },
+    {
+      contractId: 2,
+      auctionId: 2,
+      providerId: 2,
+      requesterId: 1,
+      agreedPrice: '1200.00',
+      startDate: new Date('2025-02-10T08:00:00.000Z'),
+      endDate: new Date('2025-05-10T18:00:00.000Z'),
+      status: 'active',
+    },
+  ]);
+
+  console.log('✅ Contracts seeded\n');
+}
+
+async function seedInvoices() {
+  console.log('📑 Seeding invoices...');
+
+  await db.insert(schema.invoices).values([
+    {
+      invoiceId: 1,
+      contractId: 1,
+      amount: '700.00',
+      issueDate: new Date('2025-01-17T09:00:00.000Z'),
+      dueDate: new Date('2025-02-16T23:59:59.000Z'),
+      status: 'unpaid',
+    },
+    {
+      invoiceId: 2,
+      contractId: 2,
+      amount: '1200.00',
+      issueDate: new Date('2025-02-15T09:00:00.000Z'),
+      dueDate: new Date('2025-03-17T23:59:59.000Z'),
+      status: 'paid',
+    },
+  ]);
+
+  console.log('✅ Invoices seeded\n');
+}
+
+async function seedReviews() {
+  console.log('⭐ Seeding reviews...');
+
+  await db.insert(schema.reviews).values([
+    {
+      reviewId: 1,
+      contractId: 1,
+      reviewerId: 1, // requester Anna
+      reviewedUserId: 3, // provider Chloe
+      rating: 5,
+      comment: 'Zeer vlotte samenwerking, transport perfect uitgevoerd.',
+      createdAt: new Date('2025-01-18T10:00:00.000Z'),
+    },
+    {
+      reviewId: 2,
+      contractId: 2,
+      reviewerId: 1,
+      reviewedUserId: 2,
+      rating: 4,
+      comment: 'Opslag was goed geregeld, communicatie kon iets sneller.',
+      createdAt: new Date('2025-02-20T14:30:00.000Z'),
+    },
+  ]);
+
+  console.log('✅ Reviews seeded\n');
+}
+
+async function main() {
+  console.log('🌱 Starting database seeding...\n');
+
+  await resetDatabase();
+
+  await seedCompanies();
+  await seedUsers();
+  await seedLots();
+  await seedAuctions();
+  await seedBids();
+  await seedContracts();
+  await seedInvoices();
+  await seedReviews();
+
+  console.log('🎉 Database seeding completed successfully!');
+}
+
+main()
+  .then(async () => {
+    await connection.end();
+  })
+  .catch(async (e) => {
+    console.error(e);
+    await connection.end();
+    process.exit(1);
+  });

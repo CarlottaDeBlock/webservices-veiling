@@ -1,31 +1,56 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { BIDS } from '../data/mock_data';
 import { BidListResponseDto, BidResponseDto, CreateBidDto } from './bid.dto';
+import {
+  type DatabaseProvider,
+  InjectDrizzle,
+} from '../drizzle/drizzle.provider';
+import { eq } from 'drizzle-orm';
+import { bids } from '../drizzle/schema';
 
 @Injectable()
 export class BidService {
-  getAll(): BidListResponseDto {
-    return { items: BIDS };
+  async getAll(): Promise<BidListResponseDto> {
+    const items = await this.db.query.bids.findMany();
+    return { items };
   }
 
-  getByAuction(auctionId: string): BidListResponseDto {
-    const bids = BIDS.filter((bid) => bid.auction_id === auctionId);
-    return { items: bids };
+  async getByAuction(auctionId: number): Promise<BidListResponseDto> {
+    const items = await this.db.query.bids.findMany({
+      where: eq(bids.auctionId, auctionId),
+    });
+    return { items };
   }
 
-  getById(bidId: string): BidResponseDto {
-    const bid = BIDS.find((b) => b.bid_id === bidId);
+  async getById(bidId: number): Promise<BidResponseDto> {
+    const bid = await this.db.query.bids.findFirst({
+      where: eq(bids.bidId, bidId),
+    });
     if (!bid) throw new NotFoundException('Bid not found');
     return bid;
   }
 
-  create(data: CreateBidDto): BidResponseDto {
-    const newBid = {
-      ...data,
-      bid_id: String(Date.now()),
-      bid_time: new Date(),
-    };
-    BIDS.push(newBid);
-    return newBid;
+  async create(data: CreateBidDto): Promise<BidResponseDto> {
+    const [inserted] = await this.db
+      .insert(bids)
+      .values({
+        auctionId: data.auctionId,
+        bidderId: data.bidderId,
+        amount: data.amount,
+        bidTime: new Date(),
+      })
+      .$returningId();
+    const row = await this.db.query.bids.findFirst({
+      where: eq(bids.bidId, inserted.bidId),
+    });
+
+    if (!row) {
+      throw new Error('Failed to load created bid');
+    }
+    return row;
   }
+
+  constructor(
+    @InjectDrizzle()
+    private readonly db: DatabaseProvider,
+  ) {}
 }

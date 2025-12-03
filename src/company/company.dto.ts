@@ -1,17 +1,19 @@
+export type CompanyStatus = 'active' | 'inactive';
+
 export class CreateCompanyDto {
   name: string;
-  vat_number: string;
+  vatNumber: string;
   address: string;
   city: string;
   country: string;
-  status: string;
-  peppol_id: string;
-  invoice_email: string;
+  status: CompanyStatus;
+  peppolId: string;
+  invoiceEmail: string | null;
 }
 
 export class CompanyResponseDto extends CreateCompanyDto {
-  company_id: string;
-  created_at: Date;
+  companyId: number;
+  createdAt: Date;
 }
 
 export class CompanyListResponseDto {

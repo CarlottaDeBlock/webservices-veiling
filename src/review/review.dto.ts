@@ -1,14 +1,14 @@
 export class CreateReviewDto {
-  contract_id: string;
-  reviewer_id: string;
-  reviewed_user_id: string;
+  contractId: number;
+  reviewerId: number;
+  reviewedUserId: number;
   rating: number;
-  comment: string;
+  comment: string | null;
 }
 
 export class ReviewResponseDto extends CreateReviewDto {
-  review_id: string;
-  created_at: Date;
+  reviewId: number;
+  createdAt: Date;
 }
 
 export class ReviewListResponseDto {

@@ -1,48 +1,89 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { CONTRACTS, Contract } from '../data/mock_data';
 import {
   CreateContractDto,
   ContractListResponseDto,
   ContractResponseDto,
 } from './contract.dto';
+import {
+  type DatabaseProvider,
+  InjectDrizzle,
+} from '../drizzle/drizzle.provider';
+import { eq } from 'drizzle-orm';
+import { contracts } from '../drizzle/schema';
 
 @Injectable()
 export class ContractService {
-  getAll(): ContractListResponseDto {
-    return { items: CONTRACTS };
+  async getAll(): Promise<ContractListResponseDto> {
+    const items = await this.db.query.contracts.findMany();
+    return { items };
   }
 
-  getById(id: string): ContractResponseDto {
-    const contract = CONTRACTS.find((c) => c.contract_id === id);
+  async getById(id: number): Promise<ContractResponseDto> {
+    const contract = await this.db.query.contracts.findFirst({
+      where: eq(contracts.contractId, id),
+    });
     if (!contract) {
       throw new NotFoundException('Contract not found');
     }
     return contract;
   }
 
-  create(data: CreateContractDto): ContractResponseDto {
-    const newContract: Contract = {
-      ...data,
-      contract_id: String(Date.now()),
-    };
-    CONTRACTS.push(newContract);
-    return newContract;
+  async create(data: CreateContractDto): Promise<ContractResponseDto> {
+    const [inserted] = await this.db
+      .insert(contracts)
+      .values({
+        auctionId: data.auctionId,
+        providerId: data.providerId,
+        requesterId: data.requesterId,
+        agreedPrice: data.agreedPrice,
+        startDate: data.startDate,
+        endDate: data.endDate,
+        status: data.status,
+      })
+      .$returningId();
+
+    const contract = await this.db.query.contracts.findFirst({
+      where: eq(contracts.contractId, inserted.contractId),
+    });
+
+    if (!contract) {
+      throw new Error('Failed to load created contract');
+    }
+
+    return contract;
   }
 
-  updateById(id: string, data: CreateContractDto): ContractResponseDto {
-    const index = CONTRACTS.findIndex((c) => c.contract_id === id);
-    if (index === -1) {
-      throw new NotFoundException('Contract not found');
-    }
-    CONTRACTS[index] = { ...CONTRACTS[index], ...data };
-    return CONTRACTS[index];
+  async updateById(
+    id: number,
+    data: CreateContractDto,
+  ): Promise<ContractResponseDto> {
+    await this.db
+      .update(contracts)
+      .set({
+        auctionId: data.auctionId,
+        providerId: data.providerId,
+        requesterId: data.requesterId,
+        agreedPrice: data.agreedPrice,
+        startDate: data.startDate,
+        endDate: data.endDate,
+        status: data.status,
+      })
+      .where(eq(contracts.contractId, id));
+
+    return this.getById(id);
   }
 
-  deleteById(id: string): void {
-    const index = CONTRACTS.findIndex((c) => c.contract_id === id);
-    if (index === -1) {
+  async deleteById(id: number): Promise<void> {
+    const [result] = await this.db
+      .delete(contracts)
+      .where(eq(contracts.contractId, id));
+    if (result.affectedRows === 0) {
       throw new NotFoundException('Contract not found');
     }
-    CONTRACTS.splice(index, 1);
   }
+
+  constructor(
+    @InjectDrizzle()
+    private readonly db: DatabaseProvider,
+  ) {}
 }

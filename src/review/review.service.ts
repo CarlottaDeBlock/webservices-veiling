@@ -1,43 +1,93 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { REVIEWS, Review } from '../data/mock_data';
 import {
   CreateReviewDto,
   ReviewListResponseDto,
   ReviewResponseDto,
 } from './review.dto';
+import {
+  type DatabaseProvider,
+  InjectDrizzle,
+} from '../drizzle/drizzle.provider';
+import { eq } from 'drizzle-orm';
+import { reviews } from '../drizzle/schema';
 
 @Injectable()
 export class ReviewService {
-  getAll(): ReviewListResponseDto {
-    return { items: REVIEWS };
+  async getAll(): Promise<ReviewListResponseDto> {
+    const items = await this.db.query.reviews.findMany();
+    return { items };
   }
 
-  getById(id: string): ReviewResponseDto {
-    const review = REVIEWS.find((r) => r.review_id === id);
+  async getById(id: number): Promise<ReviewResponseDto> {
+    const review = await this.db.query.reviews.findFirst({
+      where: eq(reviews.reviewId, id),
+    });
+
     if (!review) throw new NotFoundException('Review not found');
     return review;
   }
 
-  create(data: CreateReviewDto): ReviewResponseDto {
-    const newReview: Review = {
-      ...data,
-      review_id: String(Date.now()),
-      created_at: new Date(),
-    };
-    REVIEWS.push(newReview);
-    return newReview;
+  async create(data: CreateReviewDto): Promise<ReviewResponseDto> {
+    const [inserted] = await this.db
+      .insert(reviews)
+      .values({
+        contractId: data.contractId,
+        reviewerId: data.reviewerId,
+        reviewedUserId: data.reviewedUserId,
+        rating: data.rating,
+        comment: data.comment,
+      })
+      .$returningId(); // { reviewId: number }
+
+    const row = await this.db.query.reviews.findFirst({
+      where: eq(reviews.reviewId, inserted.reviewId),
+    });
+
+    if (!row) {
+      throw new Error('Failed to load created review');
+    }
+
+    return row;
   }
 
-  updateById(id: string, data: CreateReviewDto): ReviewResponseDto {
-    const index = REVIEWS.findIndex((r) => r.review_id === id);
-    if (index === -1) throw new NotFoundException('Review not found');
-    REVIEWS[index] = { ...REVIEWS[index], ...data };
-    return REVIEWS[index];
+  async updateById(
+    id: number,
+    data: CreateReviewDto,
+  ): Promise<ReviewResponseDto> {
+    await this.db
+      .update(reviews)
+      .set({
+        contractId: data.contractId,
+        reviewerId: data.reviewerId,
+        reviewedUserId: data.reviewedUserId,
+        rating: data.rating,
+        comment: data.comment,
+      })
+      .where(eq(reviews.reviewId, id));
+
+    const row = await this.db.query.reviews.findFirst({
+      where: eq(reviews.reviewId, id),
+    });
+
+    if (!row) {
+      throw new NotFoundException('Review not found');
+    }
+
+    return row;
   }
 
-  deleteById(id: string): void {
-    const index = REVIEWS.findIndex((r) => r.review_id === id);
-    if (index === -1) throw new NotFoundException('Review not found');
-    REVIEWS.splice(index, 1);
+  async deleteById(id: number): Promise<void> {
+    const [result] = await this.db
+      .delete(reviews)
+      .where(eq(reviews.reviewId, id));
+
+    if (result.affectedRows === 0) {
+      throw new NotFoundException('Auction not found');
+    }
   }
+
+  constructor(
+    @InjectDrizzle()
+    private readonly db: DatabaseProvider,
+  ) {}
 }

@@ -21,32 +21,34 @@ export class ReviewController {
   constructor(private readonly reviewService: ReviewService) {}
 
   @Get()
-  getAll(): ReviewListResponseDto {
+  async getAll(): Promise<ReviewListResponseDto> {
     return this.reviewService.getAll();
   }
 
   @Get(':id')
-  getById(@Param('id') id: string): ReviewResponseDto {
+  async getById(@Param('id') id: number): Promise<ReviewResponseDto> {
     return this.reviewService.getById(id);
   }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  create(@Body() createReviewDto: CreateReviewDto): ReviewResponseDto {
+  async create(
+    @Body() createReviewDto: CreateReviewDto,
+  ): Promise<ReviewResponseDto> {
     return this.reviewService.create(createReviewDto);
   }
 
   @Put(':id')
-  update(
-    @Param('id') id: string,
+  async update(
+    @Param('id') id: number,
     @Body() updateReviewDto: CreateReviewDto,
-  ): ReviewResponseDto {
+  ): Promise<ReviewResponseDto> {
     return this.reviewService.updateById(id, updateReviewDto);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  delete(@Param('id') id: string): void {
-    this.reviewService.deleteById(id);
+  async delete(@Param('id') id: number): Promise<void> {
+    await this.reviewService.deleteById(id);
   }
 }

@@ -1,14 +1,15 @@
+export type AuctionStatus = 'open' | 'closed' | 'cancelled';
+
 export class CreateAuctionRequestDto {
-  request_id: string;
-  start_time: Date;
-  end_time: Date;
-  status: string;
-  category: string;
+  requestId: number;
+  startTime: Date;
+  endTime: Date;
+  status: AuctionStatus;
 }
 
 export class AuctionResponseDto extends CreateAuctionRequestDto {
-  auction_id: string;
-  created_at: Date;
+  auctionId: number;
+  createdAt: Date;
 }
 
 export class AuctionListResponseDto {

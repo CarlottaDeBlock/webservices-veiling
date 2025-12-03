@@ -1,13 +1,15 @@
+export type InvoiceStatus = 'unpaid' | 'paid' | 'overdue';
+
 export class CreateInvoiceDto {
-  contract_id: string;
-  amount: number;
-  issue_date: Date;
-  due_date: Date;
-  status: string;
+  contractId: number;
+  amount: string;
+  issueDate: Date;
+  dueDate: Date;
+  status: InvoiceStatus;
 }
 
 export class InvoiceResponseDto extends CreateInvoiceDto {
-  invoice_id: string;
+  invoiceId: number;
 }
 
 export class InvoiceListResponseDto {

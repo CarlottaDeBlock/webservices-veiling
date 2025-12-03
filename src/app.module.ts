@@ -10,6 +10,7 @@ import { LotModule } from './lot/lot.module';
 import { ReviewModule } from './review/review.module';
 import { UserModule } from './user/user.module';
 import { ConfigModule } from '@nestjs/config';
+import { DrizzleModule } from './drizzle/drizzle.module';
 import configuration from './config/configuration';
 
 @Module({
@@ -26,6 +27,7 @@ import configuration from './config/configuration';
       load: [configuration],
       isGlobal: true,
     }),
+    DrizzleModule,
   ],
   controllers: [AppController],
   providers: [AppService],

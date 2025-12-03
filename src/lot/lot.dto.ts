@@ -1,24 +1,24 @@
 export class CreateLotDto {
-  request_id: string;
-  requester_id: string;
+  requestId: number;
+  requesterId: number;
   title: string;
   description: string;
-  start_time: Date;
-  end_time: Date;
-  winner_id: string | null;
+  startTime: Date;
+  endTime: Date;
+  winnerId: number | null;
   category: string;
-  reserved_price: number;
-  buy_price: number;
-  start_bid: number;
-  status: string;
-  extra_information?: string;
-  is_reversed: boolean;
-  can_bid_higher: boolean;
+  reservedPrice: string;
+  buyPrice: string | null;
+  startBid: string;
+  status: 'open' | 'closed' | 'cancelled';
+  extraInformation: string | null;
+  isReversed: boolean;
+  canBidHigher: boolean;
 }
 
 export class LotResponseDto extends CreateLotDto {
-  lot_id: string;
-  created_at: Date;
+  lotId: number;
+  createdAt: Date;
 }
 
 export class LotListResponseDto {

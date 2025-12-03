@@ -21,34 +21,34 @@ export class AuctionController {
   constructor(private readonly auctionService: AuctionService) {}
 
   @Get()
-  getAll(): AuctionListResponseDto {
+  async getAll(): Promise<AuctionListResponseDto> {
     return this.auctionService.getAll();
   }
 
   @Get(':id')
-  getById(@Param('id') id: string): AuctionResponseDto {
-    return this.auctionService.getById(id);
+  async getById(@Param('id') id: string): Promise<AuctionResponseDto> {
+    return this.auctionService.getById(Number(id));
   }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  create(
+  async create(
     @Body() createAuctionDto: CreateAuctionRequestDto,
-  ): AuctionResponseDto {
+  ): Promise<AuctionResponseDto> {
     return this.auctionService.create(createAuctionDto);
   }
 
   @Put(':id')
-  update(
+  async update(
     @Param('id') id: string,
     @Body() updateAuctionDto: CreateAuctionRequestDto,
-  ): AuctionResponseDto {
-    return this.auctionService.updateById(id, updateAuctionDto);
+  ): Promise<AuctionResponseDto> {
+    return this.auctionService.updateById(Number(id), updateAuctionDto);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  delete(@Param('id') id: string): void {
-    this.auctionService.deleteById(id);
+  async delete(@Param('id') id: string): Promise<void> {
+    await this.auctionService.deleteById(Number(id));
   }
 }

@@ -15,23 +15,25 @@ export class BidController {
   constructor(private readonly bidService: BidService) {}
 
   @Get()
-  getAll(): BidListResponseDto {
+  async getAll(): Promise<BidListResponseDto> {
     return this.bidService.getAll();
   }
 
   @Get('auction/:auctionId')
-  getByAuction(@Param('auctionId') auctionId: string): BidListResponseDto {
+  async getByAuction(
+    @Param('auctionId') auctionId: number,
+  ): Promise<BidListResponseDto> {
     return this.bidService.getByAuction(auctionId);
   }
 
   @Get(':id')
-  getById(@Param('id') id: string): BidResponseDto {
+  async getById(@Param('id') id: number): Promise<BidResponseDto> {
     return this.bidService.getById(id);
   }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  create(@Body() createBidDto: CreateBidDto): BidResponseDto {
+  async create(@Body() createBidDto: CreateBidDto): Promise<BidResponseDto> {
     return this.bidService.create(createBidDto);
   }
 }

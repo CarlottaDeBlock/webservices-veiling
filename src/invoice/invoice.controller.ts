@@ -21,32 +21,34 @@ export class InvoiceController {
   constructor(private readonly invoiceService: InvoiceService) {}
 
   @Get()
-  getAll(): InvoiceListResponseDto {
+  async getAll(): Promise<InvoiceListResponseDto> {
     return this.invoiceService.getAll();
   }
 
   @Get(':id')
-  getById(@Param('id') id: string): InvoiceResponseDto {
+  async getById(@Param('id') id: number): Promise<InvoiceResponseDto> {
     return this.invoiceService.getById(id);
   }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  create(@Body() createInvoiceDto: CreateInvoiceDto): InvoiceResponseDto {
+  async create(
+    @Body() createInvoiceDto: CreateInvoiceDto,
+  ): Promise<InvoiceResponseDto> {
     return this.invoiceService.create(createInvoiceDto);
   }
 
   @Put(':id')
-  update(
-    @Param('id') id: string,
+  async update(
+    @Param('id') id: number,
     @Body() updateInvoiceDto: CreateInvoiceDto,
-  ): InvoiceResponseDto {
+  ): Promise<InvoiceResponseDto> {
     return this.invoiceService.updateById(id, updateInvoiceDto);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  delete(@Param('id') id: string): void {
-    this.invoiceService.deleteById(id);
+  async delete(@Param('id') id: number): Promise<void> {
+    await this.invoiceService.deleteById(id);
   }
 }

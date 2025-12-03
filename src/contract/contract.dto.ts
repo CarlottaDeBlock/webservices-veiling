@@ -1,15 +1,17 @@
+export type ContractStatus = 'active' | 'completed' | 'cancelled';
+
 export class CreateContractDto {
-  auction_id: string;
-  provider_id: string;
-  requester_id: string;
-  agreed_price: number;
-  start_date: Date;
-  end_date: Date;
-  status: string;
+  auctionId: number;
+  providerId: number;
+  requesterId: number;
+  agreedPrice: string;
+  startDate: Date;
+  endDate: Date;
+  status: ContractStatus;
 }
 
 export class ContractResponseDto extends CreateContractDto {
-  contract_id: string;
+  contractId: number;
 }
 
 export class ContractListResponseDto {

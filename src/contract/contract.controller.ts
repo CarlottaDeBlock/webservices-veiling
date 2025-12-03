@@ -21,32 +21,34 @@ export class ContractController {
   constructor(private readonly contractService: ContractService) {}
 
   @Get()
-  getAll(): ContractListResponseDto {
+  async getAll(): Promise<ContractListResponseDto> {
     return this.contractService.getAll();
   }
 
   @Get(':id')
-  getById(@Param('id') id: string): ContractResponseDto {
+  async getById(@Param('id') id: number): Promise<ContractResponseDto> {
     return this.contractService.getById(id);
   }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  create(@Body() createContractDto: CreateContractDto): ContractResponseDto {
+  async create(
+    @Body() createContractDto: CreateContractDto,
+  ): Promise<ContractResponseDto> {
     return this.contractService.create(createContractDto);
   }
 
   @Put(':id')
-  update(
-    @Param('id') id: string,
+  async update(
+    @Param('id') id: number,
     @Body() updateContractDto: CreateContractDto,
-  ): ContractResponseDto {
+  ): Promise<ContractResponseDto> {
     return this.contractService.updateById(id, updateContractDto);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  delete(@Param('id') id: string): void {
-    this.contractService.deleteById(id);
+  async delete(@Param('id') id: number): Promise<void> {
+    await this.contractService.deleteById(id);
   }
 }

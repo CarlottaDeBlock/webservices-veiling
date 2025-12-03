@@ -1,42 +1,92 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { INVOICES, Invoice } from '../data/mock_data';
 import {
   CreateInvoiceDto,
   InvoiceListResponseDto,
   InvoiceResponseDto,
 } from './invoice.dto';
+import {
+  type DatabaseProvider,
+  InjectDrizzle,
+} from '../drizzle/drizzle.provider';
+import { eq } from 'drizzle-orm';
+import { invoices } from '../drizzle/schema';
 
 @Injectable()
 export class InvoiceService {
-  getAll(): InvoiceListResponseDto {
-    return { items: INVOICES };
+  async getAll(): Promise<InvoiceListResponseDto> {
+    const items = await this.db.query.invoices.findMany();
+    return { items };
   }
 
-  getById(id: string): InvoiceResponseDto {
-    const invoice = INVOICES.find((inv) => inv.invoice_id === id);
+  async getById(id: number): Promise<InvoiceResponseDto> {
+    const invoice = await this.db.query.invoices.findFirst({
+      where: eq(invoices.invoiceId, id),
+    });
     if (!invoice) throw new NotFoundException('Invoice not found');
     return invoice;
   }
 
-  create(data: CreateInvoiceDto): InvoiceResponseDto {
-    const newInvoice: Invoice = {
-      ...data,
-      invoice_id: String(Date.now()),
-    };
-    INVOICES.push(newInvoice);
-    return newInvoice;
+  async create(data: CreateInvoiceDto): Promise<InvoiceResponseDto> {
+    const [inserted] = await this.db
+      .insert(invoices)
+      .values({
+        contractId: data.contractId,
+        amount: data.amount,
+        issueDate: data.issueDate,
+        dueDate: data.dueDate,
+        status: data.status,
+      })
+      .$returningId(); // { invoiceId: number }
+
+    const row = await this.db.query.invoices.findFirst({
+      where: eq(invoices.invoiceId, inserted.invoiceId),
+    });
+
+    if (!row) {
+      throw new Error('Failed to load created invoice');
+    }
+
+    return row;
   }
 
-  updateById(id: string, data: CreateInvoiceDto): InvoiceResponseDto {
-    const index = INVOICES.findIndex((inv) => inv.invoice_id === id);
-    if (index === -1) throw new NotFoundException('Invoice not found');
-    INVOICES[index] = { ...INVOICES[index], ...data };
-    return INVOICES[index];
+  async updateById(
+    id: number,
+    data: CreateInvoiceDto,
+  ): Promise<InvoiceResponseDto> {
+    await this.db
+      .update(invoices)
+      .set({
+        contractId: data.contractId,
+        amount: data.amount,
+        issueDate: data.issueDate,
+        dueDate: data.dueDate,
+        status: data.status,
+      })
+      .where(eq(invoices.invoiceId, id));
+
+    const row = await this.db.query.invoices.findFirst({
+      where: eq(invoices.invoiceId, id),
+    });
+
+    if (!row) {
+      throw new NotFoundException('Invoice not found');
+    }
+
+    return row;
   }
 
-  deleteById(id: string): void {
-    const index = INVOICES.findIndex((inv) => inv.invoice_id === id);
-    if (index === -1) throw new NotFoundException('Invoice not found');
-    INVOICES.splice(index, 1);
+  async deleteById(id: number): Promise<void> {
+    const [result] = await this.db
+      .delete(invoices)
+      .where(eq(invoices.invoiceId, id));
+
+    if (result.affectedRows === 0) {
+      throw new NotFoundException('Invoice not found');
+    }
   }
+
+  constructor(
+    @InjectDrizzle()
+    private readonly db: DatabaseProvider,
+  ) {}
 }

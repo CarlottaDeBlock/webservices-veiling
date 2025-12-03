@@ -2,17 +2,16 @@ export class CreateUserDto {
   username: string;
   email: string;
   password: string;
-  is_provider: boolean;
-  rating: number;
-  company_id: string;
-  phonenumber: string;
+  isProvider: boolean;
+  rating: number | null;
+  companyId: number | null;
   role: string;
   language: string;
 }
 
 export class UserResponseDto extends CreateUserDto {
-  user_id: string;
-  created_at: Date;
+  userId: number;
+  createdAt: Date;
 }
 
 export class UserListResponseDto {

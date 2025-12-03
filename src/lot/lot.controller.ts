@@ -17,32 +17,32 @@ export class LotController {
   constructor(private readonly lotService: LotService) {}
 
   @Get()
-  getAll(): LotListResponseDto {
+  async getAll(): Promise<LotListResponseDto> {
     return this.lotService.getAll();
   }
 
   @Get(':id')
-  getById(@Param('id') id: string): LotResponseDto {
+  async getById(@Param('id') id: number): Promise<LotResponseDto> {
     return this.lotService.getById(id);
   }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  create(@Body() createLotDto: CreateLotDto): LotResponseDto {
+  async create(@Body() createLotDto: CreateLotDto): Promise<LotResponseDto> {
     return this.lotService.create(createLotDto);
   }
 
   @Put(':id')
-  update(
-    @Param('id') id: string,
+  async update(
+    @Param('id') id: number,
     @Body() updateLotDto: CreateLotDto,
-  ): LotResponseDto {
+  ): Promise<LotResponseDto> {
     return this.lotService.updateById(id, updateLotDto);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  delete(@Param('id') id: string): void {
-    this.lotService.deleteById(id);
+  async delete(@Param('id') id: number): Promise<void> {
+    await this.lotService.deleteById(id);
   }
 }

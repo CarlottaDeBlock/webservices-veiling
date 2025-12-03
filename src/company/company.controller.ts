@@ -21,32 +21,34 @@ export class CompanyController {
   constructor(private readonly companyService: CompanyService) {}
 
   @Get()
-  getAll(): CompanyListResponseDto {
+  async getAll(): Promise<CompanyListResponseDto> {
     return this.companyService.getAll();
   }
 
   @Get(':id')
-  getById(@Param('id') id: string): CompanyResponseDto {
+  async getById(@Param('id') id: number): Promise<CompanyResponseDto> {
     return this.companyService.getById(id);
   }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  create(@Body() createCompanyDto: CreateCompanyDto): CompanyResponseDto {
+  async create(
+    @Body() createCompanyDto: CreateCompanyDto,
+  ): Promise<CompanyResponseDto> {
     return this.companyService.create(createCompanyDto);
   }
 
   @Put(':id')
-  update(
-    @Param('id') id: string,
+  async update(
+    @Param('id') id: number,
     @Body() updateCompanyDto: CreateCompanyDto,
-  ): CompanyResponseDto {
+  ): Promise<CompanyResponseDto> {
     return this.companyService.updateById(id, updateCompanyDto);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  delete(@Param('id') id: string): void {
-    this.companyService.deleteById(id);
+  async delete(@Param('id') id: number): Promise<void> {
+    await this.companyService.deleteById(id);
   }
 }

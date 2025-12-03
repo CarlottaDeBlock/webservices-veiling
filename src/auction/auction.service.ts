@@ -1,49 +1,78 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { AUCTIONS, Auction } from '../data/mock_data';
 import {
   CreateAuctionRequestDto,
   AuctionResponseDto,
   AuctionListResponseDto,
 } from './auction.dto';
+import {
+  type DatabaseProvider,
+  InjectDrizzle,
+} from '../drizzle/drizzle.provider';
+import { eq } from 'drizzle-orm';
+import { auctions } from '../drizzle/schema';
 
 @Injectable()
 export class AuctionService {
-  getAll(): AuctionListResponseDto {
-    return { items: AUCTIONS };
+  async getAll(): Promise<AuctionListResponseDto> {
+    const items = await this.db.query.auctions.findMany();
+    return { items };
   }
 
-  getById(id: string): AuctionResponseDto {
-    const auction = AUCTIONS.find((a) => a.auction_id === id);
+  async getById(id: number): Promise<AuctionResponseDto> {
+    const auction = await this.db.query.auctions.findFirst({
+      where: eq(auctions.auctionId, id),
+    });
+
     if (!auction) {
       throw new NotFoundException(`Auction with id ${id} not found`);
     }
+
     return auction;
   }
 
-  create(data: CreateAuctionRequestDto): AuctionResponseDto {
-    const newAuction: Auction = {
-      ...data,
-      auction_id: String(Date.now()),
-      created_at: new Date(),
-    };
-    AUCTIONS.push(newAuction);
-    return newAuction;
+  async create(data: CreateAuctionRequestDto): Promise<AuctionResponseDto> {
+    const [inserted] = await this.db
+      .insert(auctions)
+      .values({
+        requestId: data.requestId,
+        startTime: data.startTime,
+        endTime: data.endTime,
+        status: data.status,
+      })
+      .$returningId(); // geeft { auctionId: number }
+
+    return this.getById(inserted.auctionId);
   }
 
-  updateById(id: string, data: CreateAuctionRequestDto): AuctionResponseDto {
-    const index = AUCTIONS.findIndex((a) => a.auction_id === id);
-    if (index === -1) {
-      throw new NotFoundException('Auction not found');
-    }
-    AUCTIONS[index] = { ...AUCTIONS[index], ...data };
-    return AUCTIONS[index];
+  async updateById(
+    id: number,
+    data: CreateAuctionRequestDto,
+  ): Promise<AuctionResponseDto> {
+    await this.db
+      .update(auctions)
+      .set({
+        requestId: data.requestId,
+        startTime: data.startTime,
+        endTime: data.endTime,
+        status: data.status,
+      })
+      .where(eq(auctions.auctionId, id));
+
+    return this.getById(id);
   }
 
-  deleteById(id: string): void {
-    const index = AUCTIONS.findIndex((a) => a.auction_id === id);
-    if (index === -1) {
+  async deleteById(id: number): Promise<void> {
+    const [result] = await this.db
+      .delete(auctions)
+      .where(eq(auctions.auctionId, id));
+
+    if (result.affectedRows === 0) {
       throw new NotFoundException('Auction not found');
     }
-    AUCTIONS.splice(index, 1);
   }
+
+  constructor(
+    @InjectDrizzle()
+    private readonly db: DatabaseProvider,
+  ) {}
 }
