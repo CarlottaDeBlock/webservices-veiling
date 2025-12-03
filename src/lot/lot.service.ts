@@ -1,16 +1,31 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { CreateLotDto, LotListResponseDto, LotResponseDto } from './lot.dto';
+import {
+  CreateLotDto,
+  LotDetailResponseDto,
+  LotListResponseDto,
+  LotResponseDto,
+} from './lot.dto';
 import {
   type DatabaseProvider,
   InjectDrizzle,
 } from '../drizzle/drizzle.provider';
-import { eq } from 'drizzle-orm';
-import { lots } from '../drizzle/schema';
+import { eq, InferSelectModel } from 'drizzle-orm';
+import { bids, lots, users } from '../drizzle/schema';
+import { BidWithUserResponseDto } from '../bid/bid.dto';
+
+type BidRow = InferSelectModel<typeof bids> & {
+  bidder: InferSelectModel<typeof users>;
+};
 
 @Injectable()
 export class LotService {
   async getAll(): Promise<LotListResponseDto> {
-    const rows = await this.db.query.lots.findMany();
+    const rows = await this.db.query.lots.findMany({
+      with: {
+        requester: true,
+        winner: true,
+      },
+    });
 
     const items: LotResponseDto[] = rows.map((row) => ({
       lotId: row.lotId,
@@ -35,33 +50,53 @@ export class LotService {
     return { items };
   }
 
-  async getById(id: number): Promise<LotResponseDto> {
-    const row = await this.db.query.lots.findFirst({
+  async getById(id: number): Promise<LotDetailResponseDto> {
+    const lot = await this.db.query.lots.findFirst({
       where: eq(lots.lotId, id),
+      with: {
+        bids: {
+          with: {
+            bidder: true,
+          },
+        },
+      },
     });
 
-    if (!row) {
+    if (!lot) {
       throw new NotFoundException('Lot not found');
     }
 
+    const bidsWithUser: BidWithUserResponseDto[] = (lot.bids as BidRow[]).map(
+      (b) => ({
+        bidId: b.bidId,
+        amount: b.amount,
+        bidTime: b.bidTime,
+        bidder: {
+          userId: b.bidder.userId,
+          username: b.bidder.username,
+        },
+      }),
+    );
+
     return {
-      lotId: row.lotId,
-      requestId: row.requestId,
-      requesterId: row.requesterId,
-      title: row.title,
-      description: row.description,
-      startTime: row.startTime,
-      endTime: row.endTime,
-      winnerId: row.winnerId,
-      category: row.category,
-      reservedPrice: row.reservedPrice,
-      buyPrice: row.buyPrice,
-      startBid: row.startBid,
-      status: row.status,
-      extraInformation: row.extraInformation,
-      isReversed: row.isReversed === 1,
-      canBidHigher: row.canBidHigher === 1,
-      createdAt: row.createdAt,
+      lotId: lot.lotId,
+      requestId: lot.requestId,
+      requesterId: lot.requesterId,
+      title: lot.title,
+      description: lot.description,
+      startTime: lot.startTime,
+      endTime: lot.endTime,
+      winnerId: lot.winnerId,
+      category: lot.category,
+      reservedPrice: lot.reservedPrice,
+      buyPrice: lot.buyPrice,
+      startBid: lot.startBid,
+      status: lot.status,
+      extraInformation: lot.extraInformation,
+      isReversed: lot.isReversed === 1,
+      canBidHigher: lot.canBidHigher === 1,
+      createdAt: lot.createdAt,
+      bids: bidsWithUser,
     };
   }
 

@@ -6,8 +6,15 @@ import {
   Body,
   HttpCode,
   HttpStatus,
+  Delete,
+  Put,
 } from '@nestjs/common';
-import { BidListResponseDto, BidResponseDto, CreateBidDto } from './bid.dto';
+import {
+  BidListResponseDto,
+  BidResponseDto,
+  CreateBidDto,
+  UpdateBidDto,
+} from './bid.dto';
 import { BidService } from './bid.service';
 
 @Controller('bids')
@@ -35,5 +42,19 @@ export class BidController {
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() createBidDto: CreateBidDto): Promise<BidResponseDto> {
     return this.bidService.create(createBidDto);
+  }
+
+  @Put(':id')
+  async update(
+    @Param('id') id: string,
+    @Body() dto: UpdateBidDto,
+  ): Promise<BidResponseDto> {
+    return this.bidService.updateById(Number(id), dto);
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async delete(@Param('id') id: string): Promise<void> {
+    await this.bidService.deleteById(Number(id));
   }
 }

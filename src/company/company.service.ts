@@ -14,13 +14,20 @@ import { companies } from '../drizzle/schema';
 @Injectable()
 export class CompanyService {
   async getAll(): Promise<CompanyListResponseDto> {
-    const items = await this.db.query.companies.findMany();
+    const items = await this.db.query.companies.findMany({
+      with: {
+        users: true,
+      },
+    });
     return { items };
   }
 
   async getById(id: number): Promise<CompanyResponseDto> {
     const company = await this.db.query.companies.findFirst({
       where: eq(companies.companyId, id),
+      with: {
+        users: true,
+      },
     });
     if (!company) throw new NotFoundException('Company not found');
     return company;

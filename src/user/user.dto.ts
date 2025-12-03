@@ -14,6 +14,11 @@ export class UserResponseDto extends CreateUserDto {
   createdAt: Date;
 }
 
+export class PublicUserResponseDto {
+  userId: number;
+  username: string;
+}
+
 export class UserListResponseDto {
   items: UserResponseDto[];
 }

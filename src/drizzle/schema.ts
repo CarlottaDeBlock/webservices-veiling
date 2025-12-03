@@ -1,3 +1,4 @@
+import { relations } from 'drizzle-orm';
 import { sql } from 'drizzle-orm';
 import {
   int,
@@ -25,12 +26,17 @@ export const auctions = mysqlTable('auctions', {
 export const lots = mysqlTable('lot', {
   lotId: int('lot_id', { unsigned: true }).primaryKey().autoincrement(),
   requestId: int('request_id', { unsigned: true }).notNull(),
-  requesterId: int('requester_id', { unsigned: true }).notNull(),
+  requesterId: int('requester_id', { unsigned: true })
+    .references(() => users.userId, { onDelete: 'no action' })
+    .notNull(),
   title: varchar('title', { length: 255 }).notNull(),
   description: text('description').notNull(),
   startTime: datetime('start_time', { fsp: 3 }).notNull(),
   endTime: datetime('end_time', { fsp: 3 }).notNull(),
-  winnerId: int('winner_id', { unsigned: true }),
+  winnerId: int('winner_id', { unsigned: true }).references(
+    () => users.userId,
+    { onDelete: 'set null' },
+  ),
   category: varchar('category', { length: 100 }).notNull(),
   reservedPrice: decimal('reserved_price', {
     precision: 10,
@@ -51,8 +57,12 @@ export const lots = mysqlTable('lot', {
 
 export const bids = mysqlTable('bid', {
   bidId: int('bid_id', { unsigned: true }).primaryKey().autoincrement(),
-  auctionId: int('auction_id', { unsigned: true }).notNull(),
-  bidderId: int('bidder_id', { unsigned: true }).notNull(),
+  auctionId: int('auction_id', { unsigned: true })
+    .references(() => auctions.auctionId, { onDelete: 'cascade' })
+    .notNull(),
+  bidderId: int('bidder_id', { unsigned: true })
+    .references(() => users.userId, { onDelete: 'cascade' })
+    .notNull(),
   amount: decimal('amount', { precision: 10, scale: 2 }).notNull(),
   bidTime: datetime('bid_time', { fsp: 3 }).notNull(),
 });
@@ -66,7 +76,9 @@ export const users = mysqlTable(
     password: varchar('password', { length: 255 }).notNull(),
     isProvider: tinyint('is_provider', { unsigned: true }).notNull().default(0),
     rating: tinyint('rating', { unsigned: true }),
-    companyId: int('company_id', { unsigned: true }),
+    companyId: int('company_id', { unsigned: true }).references(
+      () => companies.companyId,
+    ),
     role: varchar('role', { length: 100 }).notNull(),
     language: varchar('language', { length: 10 }).notNull(),
     createdAt: datetime('created_at', { fsp: 3 })
@@ -78,7 +90,9 @@ export const users = mysqlTable(
 
 export const invoices = mysqlTable('invoice', {
   invoiceId: int('invoice_id', { unsigned: true }).primaryKey().autoincrement(),
-  contractId: int('contract_id', { unsigned: true }).notNull(),
+  contractId: int('contract_id', { unsigned: true })
+    .references(() => contracts.contractId, { onDelete: 'cascade' })
+    .notNull(),
   amount: decimal('amount', { precision: 10, scale: 2 }).notNull(),
   issueDate: datetime('issue_date', { fsp: 3 }).notNull(),
   dueDate: datetime('due_date', { fsp: 3 }).notNull(),
@@ -89,9 +103,15 @@ export const contracts = mysqlTable('contract', {
   contractId: int('contract_id', { unsigned: true })
     .primaryKey()
     .autoincrement(),
-  auctionId: int('auction_id', { unsigned: true }).notNull(),
-  providerId: int('provider_id', { unsigned: true }).notNull(),
-  requesterId: int('requester_id', { unsigned: true }).notNull(),
+  auctionId: int('auction_id', { unsigned: true })
+    .references(() => auctions.auctionId, { onDelete: 'cascade' })
+    .notNull(),
+  providerId: int('provider_id', { unsigned: true })
+    .references(() => users.userId, { onDelete: 'no action' })
+    .notNull(),
+  requesterId: int('requester_id', { unsigned: true })
+    .references(() => users.userId, { onDelete: 'no action' })
+    .notNull(),
   agreedPrice: decimal('agreed_price', { precision: 10, scale: 2 }).notNull(),
   startDate: datetime('start_date', { fsp: 3 }).notNull(),
   endDate: datetime('end_date', { fsp: 3 }).notNull(),
@@ -100,9 +120,15 @@ export const contracts = mysqlTable('contract', {
 
 export const reviews = mysqlTable('review', {
   reviewId: int('review_id', { unsigned: true }).primaryKey().autoincrement(),
-  contractId: int('contract_id', { unsigned: true }).notNull(),
-  reviewerId: int('reviewer_id', { unsigned: true }).notNull(),
-  reviewedUserId: int('reviewed_user_id', { unsigned: true }).notNull(),
+  contractId: int('contract_id', { unsigned: true })
+    .references(() => contracts.contractId, { onDelete: 'cascade' })
+    .notNull(),
+  reviewerId: int('reviewer_id', { unsigned: true })
+    .references(() => users.userId, { onDelete: 'cascade' })
+    .notNull(),
+  reviewedUserId: int('reviewed_user_id', { unsigned: true })
+    .references(() => users.userId, { onDelete: 'no action' })
+    .notNull(),
   rating: tinyint('rating', { unsigned: true }).notNull(),
   comment: text('comment'),
   createdAt: datetime('created_at', { fsp: 3 })
@@ -130,3 +156,26 @@ export const companies = mysqlTable(
   },
   (table) => [uniqueIndex('companyId_company_name_unique').on(table.name)],
 );
+
+export const bidsRelations = relations(bids, ({ one }) => ({
+  bidder: one(users, {
+    fields: [bids.bidderId],
+    references: [users.userId],
+  }),
+  auction: one(auctions, {
+    fields: [bids.auctionId],
+    references: [auctions.auctionId],
+  }),
+}));
+
+export const lotsRelations = relations(lots, ({ one, many }) => ({
+  bids: many(bids),
+  requester: one(users, {
+    fields: [lots.requesterId],
+    references: [users.userId],
+  }),
+  winner: one(users, {
+    fields: [lots.winnerId],
+    references: [users.userId],
+  }),
+}));

@@ -14,13 +14,28 @@ import { contracts } from '../drizzle/schema';
 @Injectable()
 export class ContractService {
   async getAll(): Promise<ContractListResponseDto> {
-    const items = await this.db.query.contracts.findMany();
+    const items = await this.db.query.contracts.findMany({
+      with: {
+        auction: true,
+        provider: true,
+        requester: true,
+        invoice: true,
+        reviews: true,
+      },
+    });
     return { items };
   }
 
   async getById(id: number): Promise<ContractResponseDto> {
     const contract = await this.db.query.contracts.findFirst({
       where: eq(contracts.contractId, id),
+      with: {
+        auction: true,
+        provider: true,
+        requester: true,
+        invoice: true,
+        reviews: true,
+      },
     });
     if (!contract) {
       throw new NotFoundException('Contract not found');

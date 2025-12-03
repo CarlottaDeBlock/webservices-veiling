@@ -14,13 +14,24 @@ import { reviews } from '../drizzle/schema';
 @Injectable()
 export class ReviewService {
   async getAll(): Promise<ReviewListResponseDto> {
-    const items = await this.db.query.reviews.findMany();
+    const items = await this.db.query.reviews.findMany({
+      with: {
+        contract: true,
+        reviewer: true,
+        reviewedUser: true,
+      },
+    });
     return { items };
   }
 
   async getById(id: number): Promise<ReviewResponseDto> {
     const review = await this.db.query.reviews.findFirst({
       where: eq(reviews.reviewId, id),
+      with: {
+        contract: true,
+        reviewer: true,
+        reviewedUser: true,
+      },
     });
 
     if (!review) throw new NotFoundException('Review not found');

@@ -10,7 +10,12 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { LotService } from './lot.service';
-import { CreateLotDto, LotListResponseDto, LotResponseDto } from './lot.dto';
+import {
+  CreateLotDto,
+  LotDetailResponseDto,
+  LotListResponseDto,
+  LotResponseDto,
+} from './lot.dto';
 
 @Controller('lots')
 export class LotController {
@@ -22,7 +27,7 @@ export class LotController {
   }
 
   @Get(':id')
-  async getById(@Param('id') id: number): Promise<LotResponseDto> {
+  async getById(@Param('id') id: number): Promise<LotDetailResponseDto> {
     return this.lotService.getById(id);
   }
 

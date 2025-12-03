@@ -14,13 +14,24 @@ import { auctions } from '../drizzle/schema';
 @Injectable()
 export class AuctionService {
   async getAll(): Promise<AuctionListResponseDto> {
-    const items = await this.db.query.auctions.findMany();
+    const items = await this.db.query.auctions.findMany({
+      with: {
+        lots: true,
+        bids: true,
+        contact: true,
+      },
+    });
     return { items };
   }
 
   async getById(id: number): Promise<AuctionResponseDto> {
     const auction = await this.db.query.auctions.findFirst({
       where: eq(auctions.auctionId, id),
+      with: {
+        lots: true,
+        bids: true,
+        contract: true,
+      },
     });
 
     if (!auction) {

@@ -30,7 +30,11 @@ export class UserService {
   }
 
   async getAll(): Promise<UserListResponseDto> {
-    const rows = await this.db.query.users.findMany();
+    const rows = await this.db.query.users.findMany({
+      with: {
+        company: true,
+      },
+    });
     const items = rows.map((row) => this.mapRow(row));
     return { items };
   }
@@ -38,6 +42,15 @@ export class UserService {
   async getById(id: number): Promise<UserResponseDto> {
     const row = await this.db.query.users.findFirst({
       where: eq(users.userId, id),
+      with: {
+        company: true,
+        bids: true,
+        lotsRequested: true,
+        lotsWon: true,
+        contractsAsProvider: true,
+        reviewsWritten: true,
+        reviewsReceived: true,
+      },
     });
 
     if (!row) {
