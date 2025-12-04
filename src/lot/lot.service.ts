@@ -9,8 +9,8 @@ import {
   type DatabaseProvider,
   InjectDrizzle,
 } from '../drizzle/drizzle.provider';
-import { eq, InferSelectModel } from 'drizzle-orm';
-import { bids, lots, users } from '../drizzle/schema';
+import { eq, InferSelectModel, and } from 'drizzle-orm';
+import { bids, lots, userFavoriteLots, users } from '../drizzle/schema';
 import { BidWithUserResponseDto } from '../bid/bid.dto';
 
 type BidRow = InferSelectModel<typeof bids> & {
@@ -153,6 +153,51 @@ export class LotService {
   async deleteById(id: number): Promise<void> {
     const [result] = await this.db.delete(lots).where(eq(lots.lotId, id));
     if (result.affectedRows === 0) throw new NotFoundException('Lot not found');
+  }
+
+  async getFavoriteLotsByUserId(userId: number): Promise<LotResponseDto[]> {
+    const favorites = await this.db.query.userFavoriteLots.findMany({
+      where: eq(userFavoriteLots.userId, userId),
+      with: { lot: true },
+    });
+
+    return favorites.map((fav) => ({
+      lotId: fav.lot.lotId,
+      requestId: fav.lot.requestId,
+      requesterId: fav.lot.requesterId,
+      title: fav.lot.title,
+      description: fav.lot.description,
+      startTime: fav.lot.startTime,
+      endTime: fav.lot.endTime,
+      winnerId: fav.lot.winnerId,
+      category: fav.lot.category,
+      reservedPrice: fav.lot.reservedPrice,
+      buyPrice: fav.lot.buyPrice,
+      startBid: fav.lot.startBid,
+      status: fav.lot.status,
+      extraInformation: fav.lot.extraInformation,
+      isReversed: fav.lot.isReversed === 1,
+      canBidHigher: fav.lot.canBidHigher === 1,
+      createdAt: fav.lot.createdAt,
+    }));
+  }
+
+  async addFavoriteLot(userId: number, lotId: number): Promise<void> {
+    await this.db
+      .insert(userFavoriteLots)
+      .values({ userId, lotId })
+      .onDuplicateKeyUpdate({ set: {} });
+  }
+
+  async removeFavoriteLot(userId: number, lotId: number): Promise<void> {
+    await this.db
+      .delete(userFavoriteLots)
+      .where(
+        and(
+          eq(userFavoriteLots.userId, userId),
+          eq(userFavoriteLots.lotId, lotId),
+        ),
+      );
   }
 
   constructor(

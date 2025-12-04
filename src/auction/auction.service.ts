@@ -18,7 +18,7 @@ export class AuctionService {
       with: {
         lots: true,
         bids: true,
-        contact: true,
+        contract: true,
       },
     });
     return { items };

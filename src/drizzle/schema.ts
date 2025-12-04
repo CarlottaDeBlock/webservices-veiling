@@ -10,6 +10,7 @@ import {
   uniqueIndex,
   tinyint,
   mysqlEnum,
+  primaryKey,
 } from 'drizzle-orm/mysql-core';
 
 export const auctions = mysqlTable('auctions', {
@@ -157,6 +158,19 @@ export const companies = mysqlTable(
   (table) => [uniqueIndex('companyId_company_name_unique').on(table.name)],
 );
 
+export const userFavoriteLots = mysqlTable(
+  'user_favorite_lots',
+  {
+    userId: int('user_id', { unsigned: true })
+      .references(() => users.userId, { onDelete: 'cascade' })
+      .notNull(),
+    lotId: int('lot_id', { unsigned: true })
+      .references(() => lots.lotId, { onDelete: 'cascade' })
+      .notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.userId, table.lotId] })],
+);
+
 export const bidsRelations = relations(bids, ({ one }) => ({
   bidder: one(users, {
     fields: [bids.bidderId],
@@ -177,5 +191,86 @@ export const lotsRelations = relations(lots, ({ one, many }) => ({
   winner: one(users, {
     fields: [lots.winnerId],
     references: [users.userId],
+  }),
+  favoredBy: many(userFavoriteLots),
+}));
+
+export const usersRelations = relations(users, ({ one, many }) => ({
+  company: one(companies, {
+    fields: [users.companyId],
+    references: [companies.companyId],
+  }),
+  lotsRequested: many(lots),
+  lotsWon: many(lots),
+  bids: many(bids),
+  contractsAsProvider: many(contracts),
+  contractsAsRequester: many(contracts),
+  reviewsWritten: many(reviews),
+  reviewsReceived: many(reviews),
+  favoriteLots: many(userFavoriteLots),
+}));
+
+export const contractsRelations = relations(contracts, ({ one, many }) => ({
+  auction: one(auctions, {
+    fields: [contracts.auctionId],
+    references: [auctions.auctionId],
+  }),
+  provider: one(users, {
+    fields: [contracts.providerId],
+    references: [users.userId],
+  }),
+  requester: one(users, {
+    fields: [contracts.requesterId],
+    references: [users.userId],
+  }),
+  invoice: one(invoices, {
+    fields: [contracts.contractId],
+    references: [invoices.contractId],
+  }),
+  reviews: many(reviews),
+}));
+
+export const reviewsRelations = relations(reviews, ({ one }) => ({
+  contract: one(contracts, {
+    fields: [reviews.contractId],
+    references: [contracts.contractId],
+  }),
+  reviewer: one(users, {
+    fields: [reviews.reviewerId],
+    references: [users.userId],
+  }),
+  reviewedUser: one(users, {
+    fields: [reviews.reviewedUserId],
+    references: [users.userId],
+  }),
+}));
+
+export const userFavoriteLotsRelations = relations(
+  userFavoriteLots,
+  ({ one }) => ({
+    lot: one(lots, {
+      fields: [userFavoriteLots.lotId],
+      references: [lots.lotId],
+    }),
+  }),
+);
+
+export const companiesRelations = relations(companies, ({ many }) => ({
+  users: many(users),
+}));
+
+export const auctionsRelations = relations(auctions, ({ many, one }) => ({
+  lots: many(lots),
+  bids: many(bids),
+  contract: one(contracts, {
+    fields: [auctions.auctionId],
+    references: [contracts.auctionId],
+  }),
+}));
+
+export const invoicesRelations = relations(invoices, ({ one }) => ({
+  contract: one(contracts, {
+    fields: [invoices.contractId],
+    references: [contracts.contractId],
   }),
 }));

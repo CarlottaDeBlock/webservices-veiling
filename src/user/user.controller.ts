@@ -15,14 +15,24 @@ import {
   UserListResponseDto,
   UserResponseDto,
 } from './user.dto';
+import { LotResponseDto } from '../lot/lot.dto';
+import { LotService } from '../lot/lot.service';
 
 @Controller('users')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly lotService: LotService,
+  ) {}
 
   @Get()
   async getAll(): Promise<UserListResponseDto> {
     return this.userService.getAll();
+  }
+
+  @Get(':id/favoriteLots')
+  async getFavoriteLots(@Param('id') id: string): Promise<LotResponseDto[]> {
+    return this.lotService.getFavoriteLotsByUserId(Number(id));
   }
 
   @Get(':id')
@@ -48,5 +58,22 @@ export class UserController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async delete(@Param('id') id: number): Promise<void> {
     await this.userService.deleteById(id);
+  }
+
+  @Post(':id/favoritelots/:lotId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async addFavoriteLot(
+    @Param('id') id: string,
+    @Param('lotId') lotId: string,
+  ): Promise<void> {
+    await this.lotService.addFavoriteLot(Number(id), Number(lotId));
+  }
+  @Delete(':id/favoritelots/:lotId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async removeFavoriteLot(
+    @Param('id') id: string,
+    @Param('lotId') lotId: string,
+  ): Promise<void> {
+    await this.lotService.removeFavoriteLot(Number(id), Number(lotId));
   }
 }
