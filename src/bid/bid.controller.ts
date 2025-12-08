@@ -8,6 +8,7 @@ import {
   HttpStatus,
   Delete,
   Put,
+  ParseIntPipe,
 } from '@nestjs/common';
 import {
   BidListResponseDto,
@@ -28,13 +29,15 @@ export class BidController {
 
   @Get('auction/:auctionId')
   async getByAuction(
-    @Param('auctionId') auctionId: number,
+    @Param('auctionId', ParseIntPipe) auctionId: number,
   ): Promise<BidListResponseDto> {
     return this.bidService.getByAuction(auctionId);
   }
 
   @Get(':id')
-  async getById(@Param('id') id: number): Promise<BidResponseDto> {
+  async getById(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<BidResponseDto> {
     return this.bidService.getById(id);
   }
 
@@ -46,15 +49,15 @@ export class BidController {
 
   @Put(':id')
   async update(
-    @Param('id') id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateBidDto,
   ): Promise<BidResponseDto> {
-    return this.bidService.updateById(Number(id), dto);
+    return this.bidService.updateById(id, dto);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async delete(@Param('id') id: string): Promise<void> {
-    await this.bidService.deleteById(Number(id));
+  async delete(@Param('id', ParseIntPipe) id: number): Promise<void> {
+    await this.bidService.deleteById(id);
   }
 }

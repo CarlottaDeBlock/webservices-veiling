@@ -8,6 +8,7 @@ import {
   Body,
   HttpCode,
   HttpStatus,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { CompanyService } from './company.service';
 import {
@@ -26,7 +27,9 @@ export class CompanyController {
   }
 
   @Get(':id')
-  async getById(@Param('id') id: number): Promise<CompanyResponseDto> {
+  async getById(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<CompanyResponseDto> {
     return this.companyService.getById(id);
   }
 
@@ -40,7 +43,7 @@ export class CompanyController {
 
   @Put(':id')
   async update(
-    @Param('id') id: number,
+    @Param('id', ParseIntPipe) id: number,
     @Body() updateCompanyDto: CreateCompanyDto,
   ): Promise<CompanyResponseDto> {
     return this.companyService.updateById(id, updateCompanyDto);
@@ -48,7 +51,7 @@ export class CompanyController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async delete(@Param('id') id: number): Promise<void> {
+  async delete(@Param('id', ParseIntPipe) id: number): Promise<void> {
     await this.companyService.deleteById(id);
   }
 }

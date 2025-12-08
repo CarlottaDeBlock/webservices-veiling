@@ -8,6 +8,7 @@ import {
   Body,
   HttpCode,
   HttpStatus,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { ReviewService } from './review.service';
 import {
@@ -26,7 +27,9 @@ export class ReviewController {
   }
 
   @Get(':id')
-  async getById(@Param('id') id: number): Promise<ReviewResponseDto> {
+  async getById(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<ReviewResponseDto> {
     return this.reviewService.getById(id);
   }
 
@@ -40,7 +43,7 @@ export class ReviewController {
 
   @Put(':id')
   async update(
-    @Param('id') id: number,
+    @Param('id', ParseIntPipe) id: number,
     @Body() updateReviewDto: CreateReviewDto,
   ): Promise<ReviewResponseDto> {
     return this.reviewService.updateById(id, updateReviewDto);
@@ -48,7 +51,7 @@ export class ReviewController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async delete(@Param('id') id: number): Promise<void> {
+  async delete(@Param('id', ParseIntPipe) id: number): Promise<void> {
     await this.reviewService.deleteById(id);
   }
 }

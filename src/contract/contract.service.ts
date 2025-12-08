@@ -38,7 +38,10 @@ export class ContractService {
       },
     });
     if (!contract) {
-      throw new NotFoundException('Contract not found');
+      throw new NotFoundException({
+        message: 'Contract not found',
+        details: { id },
+      });
     }
     return contract;
   }
@@ -93,7 +96,10 @@ export class ContractService {
       .delete(contracts)
       .where(eq(contracts.contractId, id));
     if (result.affectedRows === 0) {
-      throw new NotFoundException('Contract not found');
+      throw new NotFoundException({
+        message: 'Contract not found',
+        details: { id },
+      });
     }
   }
 

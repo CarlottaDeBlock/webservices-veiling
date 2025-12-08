@@ -8,6 +8,7 @@ import {
   Body,
   HttpCode,
   HttpStatus,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { InvoiceService } from './invoice.service';
 import {
@@ -26,7 +27,9 @@ export class InvoiceController {
   }
 
   @Get(':id')
-  async getById(@Param('id') id: number): Promise<InvoiceResponseDto> {
+  async getById(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<InvoiceResponseDto> {
     return this.invoiceService.getById(id);
   }
 
@@ -40,7 +43,7 @@ export class InvoiceController {
 
   @Put(':id')
   async update(
-    @Param('id') id: number,
+    @Param('id', ParseIntPipe) id: number,
     @Body() updateInvoiceDto: CreateInvoiceDto,
   ): Promise<InvoiceResponseDto> {
     return this.invoiceService.updateById(id, updateInvoiceDto);
@@ -48,7 +51,7 @@ export class InvoiceController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async delete(@Param('id') id: number): Promise<void> {
+  async delete(@Param('id', ParseIntPipe) id: number): Promise<void> {
     await this.invoiceService.deleteById(id);
   }
 }

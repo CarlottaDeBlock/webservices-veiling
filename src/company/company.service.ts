@@ -29,7 +29,12 @@ export class CompanyService {
         users: true,
       },
     });
-    if (!company) throw new NotFoundException('Company not found');
+    if (!company) {
+      throw new NotFoundException({
+        message: 'Company not found',
+        details: { id },
+      });
+    }
     return company;
   }
 
@@ -85,7 +90,10 @@ export class CompanyService {
       .where(eq(companies.companyId, id));
 
     if (result.affectedRows === 0) {
-      throw new NotFoundException('Auction not found');
+      throw new NotFoundException({
+        message: 'Company not found',
+        details: { id },
+      });
     }
   }
 

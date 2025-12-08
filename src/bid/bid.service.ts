@@ -49,7 +49,12 @@ export class BidService {
         auction: true,
       },
     });
-    if (!bid) throw new NotFoundException('Bid not found');
+    if (!bid) {
+      throw new NotFoundException({
+        message: 'Bid not found',
+        details: { bidId },
+      });
+    }
     return bid;
   }
 
@@ -91,7 +96,10 @@ export class BidService {
   async deleteById(id: number): Promise<void> {
     const [result] = await this.db.delete(bids).where(eq(bids.bidId, id));
     if (result.affectedRows === 0) {
-      throw new NotFoundException('No bid with thes id exists');
+      throw new NotFoundException({
+        message: 'Bid not found',
+        details: { id },
+      });
     }
   }
 

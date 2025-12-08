@@ -8,6 +8,7 @@ import {
   Put,
   HttpCode,
   HttpStatus,
+  ParseIntPipe,
 } from '@nestjs/common';
 import {
   AuctionListResponseDto,
@@ -26,8 +27,10 @@ export class AuctionController {
   }
 
   @Get(':id')
-  async getById(@Param('id') id: string): Promise<AuctionResponseDto> {
-    return this.auctionService.getById(Number(id));
+  async getById(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<AuctionResponseDto> {
+    return this.auctionService.getById(id);
   }
 
   @Post()
@@ -40,15 +43,15 @@ export class AuctionController {
 
   @Put(':id')
   async update(
-    @Param('id') id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() updateAuctionDto: CreateAuctionRequestDto,
   ): Promise<AuctionResponseDto> {
-    return this.auctionService.updateById(Number(id), updateAuctionDto);
+    return this.auctionService.updateById(id, updateAuctionDto);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async delete(@Param('id') id: string): Promise<void> {
-    await this.auctionService.deleteById(Number(id));
+  async delete(@Param('id', ParseIntPipe) id: number): Promise<void> {
+    await this.auctionService.deleteById(id);
   }
 }

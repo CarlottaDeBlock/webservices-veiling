@@ -29,7 +29,12 @@ export class InvoiceService {
         contract: true,
       },
     });
-    if (!invoice) throw new NotFoundException('Invoice not found');
+    if (!invoice) {
+      throw new NotFoundException({
+        message: 'Invoice not found',
+        details: { id },
+      });
+    }
     return invoice;
   }
 
@@ -76,7 +81,10 @@ export class InvoiceService {
     });
 
     if (!row) {
-      throw new NotFoundException('Invoice not found');
+      throw new NotFoundException({
+        message: 'Invoice not found',
+        details: { id },
+      });
     }
 
     return row;
@@ -88,7 +96,10 @@ export class InvoiceService {
       .where(eq(invoices.invoiceId, id));
 
     if (result.affectedRows === 0) {
-      throw new NotFoundException('Invoice not found');
+      throw new NotFoundException({
+        message: 'Invoice not found',
+        details: { id },
+      });
     }
   }
 

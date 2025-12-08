@@ -34,7 +34,12 @@ export class ReviewService {
       },
     });
 
-    if (!review) throw new NotFoundException('Review not found');
+    if (!review) {
+      throw new NotFoundException({
+        message: 'Review not found',
+        details: { id },
+      });
+    }
     return review;
   }
 
@@ -81,7 +86,10 @@ export class ReviewService {
     });
 
     if (!row) {
-      throw new NotFoundException('Review not found');
+      throw new NotFoundException({
+        message: 'Review not found',
+        details: { id },
+      });
     }
 
     return row;
@@ -93,7 +101,10 @@ export class ReviewService {
       .where(eq(reviews.reviewId, id));
 
     if (result.affectedRows === 0) {
-      throw new NotFoundException('Auction not found');
+      throw new NotFoundException({
+        message: 'Review not found',
+        details: { id },
+      });
     }
   }
 

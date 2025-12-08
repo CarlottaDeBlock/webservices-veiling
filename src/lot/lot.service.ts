@@ -63,7 +63,10 @@ export class LotService {
     });
 
     if (!lot) {
-      throw new NotFoundException('Lot not found');
+      throw new NotFoundException({
+        message: 'Lot not found',
+        details: { id },
+      });
     }
 
     const bidsWithUser: BidWithUserResponseDto[] = (lot.bids as BidRow[]).map(
@@ -152,7 +155,12 @@ export class LotService {
 
   async deleteById(id: number): Promise<void> {
     const [result] = await this.db.delete(lots).where(eq(lots.lotId, id));
-    if (result.affectedRows === 0) throw new NotFoundException('Lot not found');
+    if (result.affectedRows === 0) {
+      throw new NotFoundException({
+        message: 'Lot not found',
+        details: { id },
+      });
+    }
   }
 
   async getFavoriteLotsByUserId(userId: number): Promise<LotResponseDto[]> {

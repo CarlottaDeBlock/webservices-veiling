@@ -35,7 +35,10 @@ export class AuctionService {
     });
 
     if (!auction) {
-      throw new NotFoundException(`Auction with id ${id} not found`);
+      throw new NotFoundException({
+        message: 'Auction not found',
+        details: { id },
+      });
     }
 
     return auction;
@@ -78,7 +81,10 @@ export class AuctionService {
       .where(eq(auctions.auctionId, id));
 
     if (result.affectedRows === 0) {
-      throw new NotFoundException('Auction not found');
+      throw new NotFoundException({
+        message: 'Auction not found',
+        details: { id },
+      });
     }
   }
 

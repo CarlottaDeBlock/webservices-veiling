@@ -54,7 +54,10 @@ export class UserService {
     });
 
     if (!row) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException({
+        message: 'User not found',
+        details: { id },
+      });
     }
 
     return this.mapRow(row);
@@ -101,7 +104,10 @@ export class UserService {
     const [result] = await this.db.delete(users).where(eq(users.userId, id));
 
     if (result.affectedRows === 0) {
-      throw new NotFoundException('Auction not found');
+      throw new NotFoundException({
+        message: 'User not found',
+        details: { id },
+      });
     }
   }
 

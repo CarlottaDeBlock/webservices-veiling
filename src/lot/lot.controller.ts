@@ -8,6 +8,7 @@ import {
   Body,
   HttpCode,
   HttpStatus,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { LotService } from './lot.service';
 import {
@@ -27,7 +28,9 @@ export class LotController {
   }
 
   @Get(':id')
-  async getById(@Param('id') id: number): Promise<LotDetailResponseDto> {
+  async getById(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<LotDetailResponseDto> {
     return this.lotService.getById(id);
   }
 
@@ -39,7 +42,7 @@ export class LotController {
 
   @Put(':id')
   async update(
-    @Param('id') id: number,
+    @Param('id', ParseIntPipe) id: number,
     @Body() updateLotDto: CreateLotDto,
   ): Promise<LotResponseDto> {
     return this.lotService.updateById(id, updateLotDto);
@@ -47,7 +50,7 @@ export class LotController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async delete(@Param('id') id: number): Promise<void> {
+  async delete(@Param('id', ParseIntPipe) id: number): Promise<void> {
     await this.lotService.deleteById(id);
   }
 }

@@ -8,6 +8,7 @@ import {
   Body,
   HttpCode,
   HttpStatus,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import {
@@ -31,12 +32,16 @@ export class UserController {
   }
 
   @Get(':id/favoriteLots')
-  async getFavoriteLots(@Param('id') id: string): Promise<LotResponseDto[]> {
-    return this.lotService.getFavoriteLotsByUserId(Number(id));
+  async getFavoriteLots(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<LotResponseDto[]> {
+    return this.lotService.getFavoriteLotsByUserId(id);
   }
 
   @Get(':id')
-  async getById(@Param('id') id: number): Promise<UserResponseDto> {
+  async getById(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<UserResponseDto> {
     return this.userService.getById(id);
   }
 
@@ -48,7 +53,7 @@ export class UserController {
 
   @Put(':id')
   async update(
-    @Param('id') id: number,
+    @Param('id', ParseIntPipe) id: number,
     @Body() updateUserDto: CreateUserDto,
   ): Promise<UserResponseDto> {
     return this.userService.updateById(id, updateUserDto);
@@ -56,24 +61,24 @@ export class UserController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async delete(@Param('id') id: number): Promise<void> {
+  async delete(@Param('id', ParseIntPipe) id: number): Promise<void> {
     await this.userService.deleteById(id);
   }
 
   @Post(':id/favoritelots/:lotId')
   @HttpCode(HttpStatus.NO_CONTENT)
   async addFavoriteLot(
-    @Param('id') id: string,
-    @Param('lotId') lotId: string,
+    @Param('id', ParseIntPipe) id: number,
+    @Param('lotId', ParseIntPipe) lotId: number,
   ): Promise<void> {
-    await this.lotService.addFavoriteLot(Number(id), Number(lotId));
+    await this.lotService.addFavoriteLot(id, lotId);
   }
   @Delete(':id/favoritelots/:lotId')
   @HttpCode(HttpStatus.NO_CONTENT)
   async removeFavoriteLot(
-    @Param('id') id: string,
-    @Param('lotId') lotId: string,
+    @Param('id', ParseIntPipe) id: number,
+    @Param('lotId', ParseIntPipe) lotId: number,
   ): Promise<void> {
-    await this.lotService.removeFavoriteLot(Number(id), Number(lotId));
+    await this.lotService.removeFavoriteLot(id, lotId);
   }
 }
