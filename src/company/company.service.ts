@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   CreateCompanyDto,
   CompanyListResponseDto,
@@ -9,11 +13,44 @@ import {
   InjectDrizzle,
 } from '../drizzle/drizzle.provider';
 import { eq } from 'drizzle-orm';
-import { companies } from '../drizzle/schema';
+import { companies, users } from '../drizzle/schema';
+import type { Session } from '../types/auth';
+import { Role } from '../auth/roles';
 
 @Injectable()
 export class CompanyService {
-  async getAll(): Promise<CompanyListResponseDto> {
+  constructor(
+    @InjectDrizzle()
+    private readonly db: DatabaseProvider,
+  ) {}
+
+  private async ensureUserCanAccessCompany(
+    companyId: number,
+    session: Session,
+  ): Promise<void> {
+    const isAdmin = session.roles.includes(Role.ADMIN);
+    if (isAdmin) return;
+    const user = await this.db.query.users.findFirst({
+      where: eq(users.userId, session.id),
+    });
+    if (!user || user.companyId !== companyId) {
+      throw new ForbiddenException('You do not have access to this company');
+    }
+  }
+  async getAll(session: Session): Promise<CompanyListResponseDto> {
+    const isAdmin = session.roles.includes(Role.ADMIN);
+    if (!isAdmin) {
+      const user = await this.db.query.users.findFirst({
+        where: eq(users.userId, session.id),
+      });
+      if (!user || !user.companyId) {
+        return { items: [] };
+      }
+      const company = await this.db.query.companies.findFirst({
+        where: eq(companies.companyId, user.companyId),
+      });
+      return { items: company ? [company] : [] };
+    }
     const items = await this.db.query.companies.findMany({
       with: {
         users: true,
@@ -22,7 +59,8 @@ export class CompanyService {
     return { items };
   }
 
-  async getById(id: number): Promise<CompanyResponseDto> {
+  async getById(id: number, session: Session): Promise<CompanyResponseDto> {
+    await this.ensureUserCanAccessCompany(id, session);
     const company = await this.db.query.companies.findFirst({
       where: eq(companies.companyId, id),
       with: {
@@ -66,7 +104,9 @@ export class CompanyService {
   async updateById(
     id: number,
     data: CreateCompanyDto,
+    session: Session,
   ): Promise<CompanyResponseDto> {
+    await this.ensureUserCanAccessCompany(id, session);
     await this.db
       .update(companies)
       .set({
@@ -81,10 +121,11 @@ export class CompanyService {
       })
       .where(eq(companies.companyId, id));
 
-    return this.getById(id);
+    return this.getById(id, session);
   }
 
-  async deleteById(id: number): Promise<void> {
+  async deleteById(id: number, session: Session): Promise<void> {
+    await this.ensureUserCanAccessCompany(id, session);
     const [result] = await this.db
       .delete(companies)
       .where(eq(companies.companyId, id));
@@ -96,9 +137,4 @@ export class CompanyService {
       });
     }
   }
-
-  constructor(
-    @InjectDrizzle()
-    private readonly db: DatabaseProvider,
-  ) {}
 }

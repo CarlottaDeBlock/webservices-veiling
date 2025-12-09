@@ -17,14 +17,18 @@ import {
   UpdateBidDto,
 } from './bid.dto';
 import { BidService } from './bid.service';
+import { Role } from '../auth/roles';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { CurrentUser } from '../auth/decorators/currentUser.decorator';
+import type { Session } from '../types/auth';
 
 @Controller('bids')
 export class BidController {
   constructor(private readonly bidService: BidService) {}
 
   @Get()
-  async getAll(): Promise<BidListResponseDto> {
-    return this.bidService.getAll();
+  async getAll(@CurrentUser() user: Session): Promise<BidListResponseDto> {
+    return this.bidService.getAll(user);
   }
 
   @Get('auction/:auctionId')
@@ -37,27 +41,38 @@ export class BidController {
   @Get(':id')
   async getById(
     @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: Session,
   ): Promise<BidResponseDto> {
-    return this.bidService.getById(id);
+    return this.bidService.getById(id, user);
   }
 
   @Post()
+  @Roles(Role.USER)
   @HttpCode(HttpStatus.CREATED)
-  async create(@Body() createBidDto: CreateBidDto): Promise<BidResponseDto> {
-    return this.bidService.create(createBidDto);
+  async create(
+    @Body() createBidDto: CreateBidDto,
+    @CurrentUser() user: Session,
+  ): Promise<BidResponseDto> {
+    return this.bidService.create(createBidDto, user);
   }
 
   @Put(':id')
+  @Roles(Role.ADMIN)
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateBidDto,
+    @CurrentUser() user: Session,
   ): Promise<BidResponseDto> {
-    return this.bidService.updateById(id, dto);
+    return this.bidService.updateById(id, dto, user);
   }
 
   @Delete(':id')
+  @Roles(Role.ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)
-  async delete(@Param('id', ParseIntPipe) id: number): Promise<void> {
-    await this.bidService.deleteById(id);
+  async delete(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: Session,
+  ): Promise<void> {
+    await this.bidService.deleteById(id, user);
   }
 }

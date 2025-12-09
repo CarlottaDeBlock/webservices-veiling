@@ -16,24 +16,30 @@ import {
   InvoiceListResponseDto,
   InvoiceResponseDto,
 } from './invoice.dto';
+import { CurrentUser } from '../auth/decorators/currentUser.decorator';
+import type { Session } from '../types/auth';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { Role } from '../auth/roles';
 
 @Controller('invoices')
 export class InvoiceController {
   constructor(private readonly invoiceService: InvoiceService) {}
 
   @Get()
-  async getAll(): Promise<InvoiceListResponseDto> {
-    return this.invoiceService.getAll();
+  async getAll(@CurrentUser() user: Session): Promise<InvoiceListResponseDto> {
+    return this.invoiceService.getAll(user);
   }
 
   @Get(':id')
   async getById(
     @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: Session,
   ): Promise<InvoiceResponseDto> {
-    return this.invoiceService.getById(id);
+    return this.invoiceService.getById(id, user);
   }
 
   @Post()
+  @Roles(Role.ADMIN, Role.PROVIDER)
   @HttpCode(HttpStatus.CREATED)
   async create(
     @Body() createInvoiceDto: CreateInvoiceDto,
@@ -42,6 +48,7 @@ export class InvoiceController {
   }
 
   @Put(':id')
+  @Roles(Role.ADMIN, Role.PROVIDER)
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateInvoiceDto: CreateInvoiceDto,
@@ -50,6 +57,7 @@ export class InvoiceController {
   }
 
   @Delete(':id')
+  @Roles(Role.ADMIN, Role.PROVIDER)
   @HttpCode(HttpStatus.NO_CONTENT)
   async delete(@Param('id', ParseIntPipe) id: number): Promise<void> {
     await this.invoiceService.deleteById(id);

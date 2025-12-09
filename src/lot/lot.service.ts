@@ -19,6 +19,11 @@ type BidRow = InferSelectModel<typeof bids> & {
 
 @Injectable()
 export class LotService {
+  constructor(
+    @InjectDrizzle()
+    private readonly db: DatabaseProvider,
+  ) {}
+
   async getAll(): Promise<LotListResponseDto> {
     const rows = await this.db.query.lots.findMany({
       with: {
@@ -77,6 +82,7 @@ export class LotService {
         bidder: {
           userId: b.bidder.userId,
           username: b.bidder.username,
+          email: b.bidder.email,
         },
       }),
     );
@@ -207,9 +213,4 @@ export class LotService {
         ),
       );
   }
-
-  constructor(
-    @InjectDrizzle()
-    private readonly db: DatabaseProvider,
-  ) {}
 }

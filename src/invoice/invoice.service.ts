@@ -8,21 +8,61 @@ import {
   type DatabaseProvider,
   InjectDrizzle,
 } from '../drizzle/drizzle.provider';
-import { eq } from 'drizzle-orm';
-import { invoices } from '../drizzle/schema';
+import { eq, or } from 'drizzle-orm';
+import type { Session } from '../types/auth';
+import { Role } from '../auth/roles';
+import { invoices, contracts } from '../drizzle/schema';
 
 @Injectable()
 export class InvoiceService {
-  async getAll(): Promise<InvoiceListResponseDto> {
-    const items = await this.db.query.invoices.findMany({
-      with: {
-        contract: true,
-      },
+  constructor(
+    @InjectDrizzle()
+    private readonly db: DatabaseProvider,
+  ) {}
+
+  private async ensureCanAccessInvoice(id: number, session: Session) {
+    const isAdmin = session.roles.includes(Role.ADMIN);
+    if (isAdmin) return;
+
+    const invoice = await this.db.query.invoices.findFirst({
+      where: eq(invoices.invoiceId, id),
+      with: { contract: true },
     });
+    if (
+      !invoice ||
+      (invoice.contract.providerId !== session.id &&
+        invoice.contract.requesterId !== session.id)
+    ) {
+      throw new NotFoundException({
+        message: 'Invoice not found',
+        details: { id },
+      });
+    }
+  }
+
+  async getAll(session: Session): Promise<InvoiceListResponseDto> {
+    const isAdmin = session.roles.includes(Role.ADMIN);
+    if (isAdmin) {
+      const items = await this.db.query.invoices.findMany({
+        with: {
+          contract: true,
+        },
+      });
+      return { items };
+    }
+    const items = await this.db.query.invoices.findMany({
+      with: { contract: true },
+      where: or(
+        eq(contracts.providerId, session.id),
+        eq(contracts.requesterId, session.id),
+      ),
+    });
+
     return { items };
   }
 
-  async getById(id: number): Promise<InvoiceResponseDto> {
+  async getById(id: number, session: Session): Promise<InvoiceResponseDto> {
+    await this.ensureCanAccessInvoice(id, session);
     const invoice = await this.db.query.invoices.findFirst({
       where: eq(invoices.invoiceId, id),
       with: {
@@ -102,9 +142,4 @@ export class InvoiceService {
       });
     }
   }
-
-  constructor(
-    @InjectDrizzle()
-    private readonly db: DatabaseProvider,
-  ) {}
 }

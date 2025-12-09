@@ -8,13 +8,46 @@ import {
   type DatabaseProvider,
   InjectDrizzle,
 } from '../drizzle/drizzle.provider';
-import { eq } from 'drizzle-orm';
+import { eq, or } from 'drizzle-orm';
 import { contracts } from '../drizzle/schema';
+import { Role } from '../auth/roles';
+import type { Session } from '../types/auth';
 
 @Injectable()
 export class ContractService {
-  async getAll(): Promise<ContractListResponseDto> {
+  constructor(
+    @InjectDrizzle()
+    private readonly db: DatabaseProvider,
+  ) {}
+
+  private async ensureCanAccessContract(id: number, session: Session) {
+    const isAdmin = session.roles.includes(Role.ADMIN);
+    if (isAdmin) return;
+
+    const contract = await this.db.query.contracts.findFirst({
+      where: eq(contracts.contractId, id),
+    });
+    if (
+      !contract ||
+      (contract.providerId !== session.id &&
+        contract.requesterId !== session.id)
+    ) {
+      throw new NotFoundException({
+        message: 'Contract not found',
+        details: { id },
+      });
+    }
+  }
+
+  async getAll(session: Session): Promise<ContractListResponseDto> {
+    const isAdmin = session.roles.includes(Role.ADMIN);
     const items = await this.db.query.contracts.findMany({
+      where: isAdmin
+        ? undefined
+        : or(
+            eq(contracts.providerId, session.id),
+            eq(contracts.requesterId, session.id),
+          ),
       with: {
         auction: true,
         provider: true,
@@ -26,7 +59,8 @@ export class ContractService {
     return { items };
   }
 
-  async getById(id: number): Promise<ContractResponseDto> {
+  async getById(id: number, session: Session): Promise<ContractResponseDto> {
+    await this.ensureCanAccessContract(id, session);
     const contract = await this.db.query.contracts.findFirst({
       where: eq(contracts.contractId, id),
       with: {
@@ -88,7 +122,18 @@ export class ContractService {
       })
       .where(eq(contracts.contractId, id));
 
-    return this.getById(id);
+    const contract = await this.db.query.contracts.findFirst({
+      where: eq(contracts.contractId, id),
+    });
+
+    if (!contract) {
+      throw new NotFoundException({
+        message: 'Contract not found',
+        details: { id },
+      });
+    }
+
+    return contract;
   }
 
   async deleteById(id: number): Promise<void> {
@@ -102,9 +147,4 @@ export class ContractService {
       });
     }
   }
-
-  constructor(
-    @InjectDrizzle()
-    private readonly db: DatabaseProvider,
-  ) {}
 }

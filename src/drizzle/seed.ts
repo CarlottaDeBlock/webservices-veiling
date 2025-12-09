@@ -1,6 +1,9 @@
 import { drizzle } from 'drizzle-orm/mysql2';
 import * as mysql from 'mysql2/promise';
 import * as schema from './schema';
+import * as argon2 from 'argon2';
+import { Role } from '../auth/roles';
+import config from '../config/configuration';
 
 const connection = mysql.createPool({
   uri: process.env.DATABASE_URL,
@@ -12,6 +15,16 @@ const db = drizzle(connection, {
   mode: 'default',
 });
 
+const auth = config().auth;
+
+async function hashPassword(password: string): Promise<string> {
+  return argon2.hash(password, {
+    type: argon2.argon2id,
+    hashLength: auth.hashLength,
+    timeCost: auth.timeCost,
+    memoryCost: auth.memoryCost,
+  });
+}
 async function resetDatabase() {
   console.log('🗑️ Resetting database...');
 
@@ -66,34 +79,37 @@ async function seedUsers() {
       userId: 1,
       username: 'requester_anna',
       email: 'anna.requester@test.dev',
-      password: 'hashed-password-1',
+      passwordHash: await hashPassword('12345678'),
       isProvider: 0,
       rating: 5,
       companyId: 1,
       role: 'requester',
       language: 'nl',
+      roles: [Role.USER, Role.REQUESTER],
     },
     {
       userId: 2,
       username: 'provider_bob',
       email: 'bob.provider@test.dev',
-      password: 'hashed-password-2',
+      passwordHash: await hashPassword('12345678'),
       isProvider: 1,
       rating: 4,
       companyId: 2,
       role: 'provider',
       language: 'nl',
+      roles: [Role.USER, Role.PROVIDER],
     },
     {
       userId: 3,
-      username: 'provider_chloe',
-      email: 'chloe.provider@test.dev',
-      password: 'hashed-password-3',
+      username: 'admin',
+      email: 'admin@test.dev',
+      passwordHash: await hashPassword('12345678'),
       isProvider: 1,
       rating: 5,
       companyId: 2,
-      role: 'provider',
+      role: 'admin',
       language: 'en',
+      roles: [Role.USER, Role.ADMIN],
     },
   ]);
 

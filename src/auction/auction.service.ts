@@ -13,6 +13,11 @@ import { auctions } from '../drizzle/schema';
 
 @Injectable()
 export class AuctionService {
+  constructor(
+    @InjectDrizzle()
+    private readonly db: DatabaseProvider,
+  ) {}
+
   async getAll(): Promise<AuctionListResponseDto> {
     const items = await this.db.query.auctions.findMany({
       with: {
@@ -53,7 +58,7 @@ export class AuctionService {
         endTime: data.endTime,
         status: data.status,
       })
-      .$returningId(); // geeft { auctionId: number }
+      .$returningId();
 
     return this.getById(inserted.auctionId);
   }
@@ -87,9 +92,4 @@ export class AuctionService {
       });
     }
   }
-
-  constructor(
-    @InjectDrizzle()
-    private readonly db: DatabaseProvider,
-  ) {}
 }

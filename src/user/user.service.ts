@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import {
-  CreateUserDto,
-  UserListResponseDto,
-  UserResponseDto,
+  UpdateUserRequestDto,
+  PublicUserListResponseDto,
+  PublicUserResponseDto,
 } from './user.dto';
 import {
   type DatabaseProvider,
@@ -10,37 +10,31 @@ import {
 } from '../drizzle/drizzle.provider';
 import { eq } from 'drizzle-orm';
 import { users } from '../drizzle/schema';
+import { plainToInstance } from 'class-transformer';
 
 @Injectable()
 export class UserService {
-  private mapRow(row: typeof users.$inferSelect): UserResponseDto {
-    return {
-      userId: row.userId,
-      username: row.username,
-      email: row.email,
-      password: row.password,
-      // tinyint(0/1) → boolean
-      isProvider: row.isProvider === 1,
-      rating: row.rating,
-      companyId: row.companyId,
-      role: row.role,
-      language: row.language,
-      createdAt: row.createdAt,
-    };
-  }
+  constructor(
+    @InjectDrizzle()
+    private readonly db: DatabaseProvider,
+  ) {}
 
-  async getAll(): Promise<UserListResponseDto> {
+  async getAll(): Promise<PublicUserListResponseDto> {
     const rows = await this.db.query.users.findMany({
       with: {
         company: true,
       },
     });
-    const items = rows.map((row) => this.mapRow(row));
+    const items = rows.map((row) =>
+      plainToInstance(PublicUserResponseDto, row, {
+        excludeExtraneousValues: true,
+      }),
+    );
     return { items };
   }
 
-  async getById(id: number): Promise<UserResponseDto> {
-    const row = await this.db.query.users.findFirst({
+  async getById(id: number): Promise<PublicUserResponseDto> {
+    const user = await this.db.query.users.findFirst({
       where: eq(users.userId, id),
       with: {
         company: true,
@@ -53,47 +47,63 @@ export class UserService {
       },
     });
 
-    if (!row) {
+    if (!user) {
       throw new NotFoundException({
         message: 'User not found',
         details: { id },
       });
     }
 
-    return this.mapRow(row);
+    return plainToInstance(PublicUserResponseDto, user, {
+      excludeExtraneousValues: true,
+    });
   }
 
-  async create(data: CreateUserDto): Promise<UserResponseDto> {
+  /*async create(data: CreateUserDto): Promise<PublicUserResponseDto> {
     const [inserted] = await this.db
       .insert(users)
       .values({
         username: data.username,
         email: data.email,
-        password: data.password,
+        passwordHash: 'TODO_HASH',
         // boolean → tinyint
         isProvider: data.isProvider ? 1 : 0,
         rating: data.rating,
         companyId: data.companyId,
         role: data.role,
         language: data.language,
+        roles: data.roles,
       })
       .$returningId();
 
-    return this.getById(inserted.userId);
-  }
+    const row = await this.db.query.users.findFirst({
+      where: eq(users.userId, inserted.userId),
+    });
 
-  async updateById(id: number, data: CreateUserDto): Promise<UserResponseDto> {
+    if (!row) {
+      throw new NotFoundException('User not found after create');
+    }
+
+    return plainToInstance(PublicUserResponseDto, row, {
+      excludeExtraneousValues: true,
+    });
+  }*/
+
+  async updateById(
+    id: number,
+    data: UpdateUserRequestDto,
+  ): Promise<PublicUserResponseDto> {
     await this.db
       .update(users)
       .set({
         username: data.username,
         email: data.email,
-        password: data.password,
-        isProvider: data.isProvider ? 1 : 0,
+        /*isProvider: data.isProvider ? 1 : 0,
         rating: data.rating,
         companyId: data.companyId,
         role: data.role,
         language: data.language,
+        roles: data.roles,*/
       })
       .where(eq(users.userId, id));
 
@@ -104,15 +114,7 @@ export class UserService {
     const [result] = await this.db.delete(users).where(eq(users.userId, id));
 
     if (result.affectedRows === 0) {
-      throw new NotFoundException({
-        message: 'User not found',
-        details: { id },
-      });
+      throw new NotFoundException('User not found');
     }
   }
-
-  constructor(
-    @InjectDrizzle()
-    private readonly db: DatabaseProvider,
-  ) {}
 }

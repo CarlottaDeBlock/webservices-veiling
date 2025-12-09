@@ -1,5 +1,6 @@
 import { relations } from 'drizzle-orm';
 import { sql } from 'drizzle-orm';
+import { json } from 'drizzle-orm/mysql-core';
 import {
   int,
   mysqlTable,
@@ -74,7 +75,8 @@ export const users = mysqlTable(
     userId: int('user_id', { unsigned: true }).primaryKey().autoincrement(),
     username: varchar('username', { length: 100 }).notNull(),
     email: varchar('email', { length: 255 }).notNull(),
-    password: varchar('password', { length: 255 }).notNull(),
+    passwordHash: varchar('password_hash', { length: 255 }).notNull(),
+    roles: json('roles').notNull(),
     isProvider: tinyint('is_provider', { unsigned: true }).notNull().default(0),
     rating: tinyint('rating', { unsigned: true }),
     companyId: int('company_id', { unsigned: true }).references(
@@ -86,7 +88,10 @@ export const users = mysqlTable(
       .default(sql`CURRENT_TIMESTAMP(3)`)
       .notNull(),
   },
-  (table) => [uniqueIndex('userId_user_username_unique').on(table.username)],
+  (table) => [
+    uniqueIndex('userId_user_username_unique').on(table.username),
+    uniqueIndex('userId_user_email_unique').on(table.email),
+  ],
 );
 
 export const invoices = mysqlTable('invoice', {

@@ -11,6 +11,7 @@ import {
 import CustomLogger from './core/customLogger';
 import { HttpExceptionFilter } from './lib/http-exception.filter';
 import { DrizzleQueryErrorFilter } from './drizzle/drizzle-query-error.filter';
+import helmet from 'helmet';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -19,6 +20,7 @@ async function bootstrap() {
   const cors = config.get<CorsConfig>('cors')!;
   const log = config.get<LogConfig>('log')!;
 
+  app.use(helmet());
   app.useLogger(
     new CustomLogger({
       logLevels: log.levels,

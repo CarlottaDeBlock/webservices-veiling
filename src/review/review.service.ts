@@ -8,13 +8,43 @@ import {
   type DatabaseProvider,
   InjectDrizzle,
 } from '../drizzle/drizzle.provider';
-import { eq } from 'drizzle-orm';
 import { reviews } from '../drizzle/schema';
+import type { Session } from '../types/auth';
+import { Role } from '../auth/roles';
+import { eq, or } from 'drizzle-orm';
 
 @Injectable()
 export class ReviewService {
-  async getAll(): Promise<ReviewListResponseDto> {
+  constructor(
+    @InjectDrizzle()
+    private readonly db: DatabaseProvider,
+  ) {}
+
+  private async ensureCanAccessReview(id: number, session: Session) {
+    const isAdmin = session.roles.includes(Role.ADMIN);
+    if (isAdmin) return;
+
+    const review = await this.db.query.reviews.findFirst({
+      where: eq(reviews.reviewId, id),
+    });
+
+    if (
+      !review ||
+      (review.reviewerId !== session.id && review.reviewedUserId !== session.id)
+    ) {
+      throw new NotFoundException('Review not found');
+    }
+  }
+
+  async getAll(session: Session): Promise<ReviewListResponseDto> {
+    const isAdmin = session.roles.includes(Role.ADMIN);
     const items = await this.db.query.reviews.findMany({
+      where: isAdmin
+        ? undefined
+        : or(
+            eq(reviews.reviewerId, session.id),
+            eq(reviews.reviewedUserId, session.id),
+          ),
       with: {
         contract: true,
         reviewer: true,
@@ -24,7 +54,8 @@ export class ReviewService {
     return { items };
   }
 
-  async getById(id: number): Promise<ReviewResponseDto> {
+  async getById(id: number, session: Session): Promise<ReviewResponseDto> {
+    await this.ensureCanAccessReview(id, session);
     const review = await this.db.query.reviews.findFirst({
       where: eq(reviews.reviewId, id),
       with: {
@@ -43,59 +74,46 @@ export class ReviewService {
     return review;
   }
 
-  async create(data: CreateReviewDto): Promise<ReviewResponseDto> {
+  async create(
+    data: CreateReviewDto,
+    session: Session,
+  ): Promise<ReviewResponseDto> {
     const [inserted] = await this.db
       .insert(reviews)
       .values({
         contractId: data.contractId,
-        reviewerId: data.reviewerId,
+        reviewerId: session.id,
         reviewedUserId: data.reviewedUserId,
         rating: data.rating,
         comment: data.comment,
       })
-      .$returningId(); // { reviewId: number }
+      .$returningId();
 
-    const row = await this.db.query.reviews.findFirst({
-      where: eq(reviews.reviewId, inserted.reviewId),
-    });
-
-    if (!row) {
-      throw new Error('Failed to load created review');
-    }
-
-    return row;
+    return this.getById(inserted.reviewId, session);
   }
 
   async updateById(
     id: number,
     data: CreateReviewDto,
+    session: Session,
   ): Promise<ReviewResponseDto> {
+    await this.ensureCanAccessReview(id, session);
     await this.db
       .update(reviews)
       .set({
         contractId: data.contractId,
-        reviewerId: data.reviewerId,
+        reviewerId: session.id,
         reviewedUserId: data.reviewedUserId,
         rating: data.rating,
         comment: data.comment,
       })
       .where(eq(reviews.reviewId, id));
 
-    const row = await this.db.query.reviews.findFirst({
-      where: eq(reviews.reviewId, id),
-    });
-
-    if (!row) {
-      throw new NotFoundException({
-        message: 'Review not found',
-        details: { id },
-      });
-    }
-
-    return row;
+    return this.getById(id, session);
   }
 
-  async deleteById(id: number): Promise<void> {
+  async deleteById(id: number, session: Session): Promise<void> {
+    await this.ensureCanAccessReview(id, session);
     const [result] = await this.db
       .delete(reviews)
       .where(eq(reviews.reviewId, id));
@@ -107,9 +125,4 @@ export class ReviewService {
       });
     }
   }
-
-  constructor(
-    @InjectDrizzle()
-    private readonly db: DatabaseProvider,
-  ) {}
 }

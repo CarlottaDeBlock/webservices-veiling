@@ -17,16 +17,21 @@ import {
   LotListResponseDto,
   LotResponseDto,
 } from './lot.dto';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { Role } from '../auth/roles';
+import { Public } from '../auth/decorators/public.decorator';
 
 @Controller('lots')
 export class LotController {
   constructor(private readonly lotService: LotService) {}
 
+  @Public()
   @Get()
   async getAll(): Promise<LotListResponseDto> {
     return this.lotService.getAll();
   }
 
+  @Public()
   @Get(':id')
   async getById(
     @Param('id', ParseIntPipe) id: number,
@@ -35,12 +40,14 @@ export class LotController {
   }
 
   @Post()
+  @Roles(Role.PROVIDER, Role.ADMIN)
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() createLotDto: CreateLotDto): Promise<LotResponseDto> {
     return this.lotService.create(createLotDto);
   }
 
   @Put(':id')
+  @Roles(Role.PROVIDER, Role.ADMIN)
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateLotDto: CreateLotDto,
@@ -49,6 +56,7 @@ export class LotController {
   }
 
   @Delete(':id')
+  @Roles(Role.PROVIDER, Role.ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)
   async delete(@Param('id', ParseIntPipe) id: number): Promise<void> {
     await this.lotService.deleteById(id);

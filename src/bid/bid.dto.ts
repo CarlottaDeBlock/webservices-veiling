@@ -7,9 +7,9 @@ export class CreateBidDto {
   @Min(1)
   auctionId: number;
 
-  @IsInt()
+  /*@IsInt()
   @Min(1)
-  bidderId: number;
+  bidderId: number;*/
 
   @IsString()
   amount: string;
@@ -38,9 +38,9 @@ export class UpdateBidDto {
   @Min(1)
   auctionId: number;
 
-  @IsInt()
+  /*@IsInt()
   @Min(1)
-  bidderId: number;
+  bidderId: number;*/
 
   @IsString()
   amount: string;

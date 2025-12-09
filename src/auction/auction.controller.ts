@@ -16,16 +16,21 @@ import {
   CreateAuctionRequestDto,
 } from './auction.dto';
 import { AuctionService } from './auction.service';
+import { Role } from '../auth/roles';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { Public } from '../auth/decorators/public.decorator';
 
 @Controller('auctions')
 export class AuctionController {
   constructor(private readonly auctionService: AuctionService) {}
 
+  @Public()
   @Get()
   async getAll(): Promise<AuctionListResponseDto> {
     return this.auctionService.getAll();
   }
 
+  @Public()
   @Get(':id')
   async getById(
     @Param('id', ParseIntPipe) id: number,
@@ -34,6 +39,7 @@ export class AuctionController {
   }
 
   @Post()
+  @Roles(Role.PROVIDER, Role.ADMIN)
   @HttpCode(HttpStatus.CREATED)
   async create(
     @Body() createAuctionDto: CreateAuctionRequestDto,
@@ -42,6 +48,7 @@ export class AuctionController {
   }
 
   @Put(':id')
+  @Roles(Role.PROVIDER, Role.ADMIN)
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateAuctionDto: CreateAuctionRequestDto,
@@ -50,6 +57,7 @@ export class AuctionController {
   }
 
   @Delete(':id')
+  @Roles(Role.PROVIDER, Role.ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)
   async delete(@Param('id', ParseIntPipe) id: number): Promise<void> {
     await this.auctionService.deleteById(id);
