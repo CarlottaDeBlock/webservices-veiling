@@ -8,9 +8,9 @@ import {
   Body,
   HttpCode,
   HttpStatus,
-  ParseIntPipe,
   UseGuards,
   UseInterceptors,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import {
@@ -31,7 +31,14 @@ import { type Session } from '../types/auth';
 import { ParseUserIdPipe } from '../auth/pipes/parseUserId.pipe';
 import { CurrentUser } from '../auth/decorators/currentUser.decorator';
 import { AuthDelayInterceptor } from '../auth/interceptors/authDelay.interceptor';
+import { ApiBearerAuth, ApiTags, ApiResponse } from '@nestjs/swagger';
 
+@ApiTags('Users')
+@ApiBearerAuth()
+@ApiResponse({
+  status: 401,
+  description: 'Unauthorized - you need to be signed in',
+})
 @Controller('users')
 export class UserController {
   constructor(
@@ -40,14 +47,29 @@ export class UserController {
     private readonly authService: AuthService,
   ) {}
 
-  @Get()
+  @ApiResponse({
+    status: 200,
+    description: 'Get all users (admin only)',
+    type: PublicUserListResponseDto,
+  })
   @Roles(Role.ADMIN)
+  @Get()
   async getAll(): Promise<PublicUserListResponseDto> {
     return this.userService.getAll();
   }
 
-  @Get(':id/favoriteLots')
+  @ApiResponse({
+    status: 200,
+    description: 'Get favorite lots for a user',
+    type: LotResponseDto,
+    isArray: true,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'User not found',
+  })
   @UseGuards(CheckUserAccessGuard)
+  @Get(':id/favoriteLots')
   async getFavoriteLots(
     @Param('id', ParseUserIdPipe) id: number | 'me',
     @CurrentUser() user: Session,
@@ -55,8 +77,17 @@ export class UserController {
     return this.lotService.getFavoriteLotsByUserId(id === 'me' ? user.id : id);
   }
 
-  @Get(':id')
+  @ApiResponse({
+    status: 200,
+    description: 'Get user by ID (or "me")',
+    type: PublicUserResponseDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'User not found',
+  })
   @UseGuards(CheckUserAccessGuard)
+  @Get(':id')
   async getById(
     @Param('id', ParseUserIdPipe) id: 'me' | number,
     @CurrentUser() user: Session,
@@ -65,6 +96,15 @@ export class UserController {
     return this.userService.getById(userId);
   }
 
+  @ApiResponse({
+    status: 201,
+    description: 'Register a new user and return a JWT token',
+    type: LoginResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid input data',
+  })
   @Public()
   @UseInterceptors(AuthDelayInterceptor)
   @Post()
@@ -75,16 +115,21 @@ export class UserController {
     return { token };
   }
 
-  /*@Post()
-  @HttpCode(HttpStatus.CREATED)
-  async create(
-    @Body() createUserDto: CreateUserDto,
-  ): Promise<PublicUserResponseDto> {
-    return this.userService.create(createUserDto);
-  }*/
-
-  @Put(':id')
+  @ApiResponse({
+    status: 200,
+    description: 'Update user (or "me")',
+    type: PublicUserResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid input data',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'User not found',
+  })
   @UseGuards(CheckUserAccessGuard)
+  @Put(':id')
   async update(
     @Param('id', ParseUserIdPipe) id: 'me' | number,
     @CurrentUser() user: Session,
@@ -96,8 +141,16 @@ export class UserController {
     );
   }
 
-  @Delete(':id')
+  @ApiResponse({
+    status: 204,
+    description: 'Delete user (or "me")',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'User not found',
+  })
   @UseGuards(CheckUserAccessGuard)
+  @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async delete(
     @Param('id', ParseUserIdPipe) id: 'me' | number,
@@ -106,8 +159,16 @@ export class UserController {
     return await this.userService.deleteById(id === 'me' ? user.id : id);
   }
 
-  @Post(':id/favoritelots/:lotId')
+  @ApiResponse({
+    status: 204,
+    description: 'Add a lot to user favorites',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'User or lot not found',
+  })
   @UseGuards(CheckUserAccessGuard)
+  @Post(':id/favoritelots/:lotId')
   @HttpCode(HttpStatus.NO_CONTENT)
   async addFavoriteLot(
     @Param('id', ParseUserIdPipe) id: number | 'me',
@@ -117,8 +178,17 @@ export class UserController {
     const userId = id === 'me' ? user.id : id;
     await this.lotService.addFavoriteLot(userId, lotId);
   }
-  @Delete(':id/favoritelots/:lotId')
+
+  @ApiResponse({
+    status: 204,
+    description: 'Remove a lot from user favorites',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'User or lot not found',
+  })
   @UseGuards(CheckUserAccessGuard)
+  @Delete(':id/favoritelots/:lotId')
   @HttpCode(HttpStatus.NO_CONTENT)
   async removeFavoriteLot(
     @Param('id', ParseUserIdPipe) id: number | 'me',

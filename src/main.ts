@@ -12,31 +12,30 @@ import CustomLogger from './core/customLogger';
 import { HttpExceptionFilter } from './lib/http-exception.filter';
 import { DrizzleQueryErrorFilter } from './drizzle/drizzle-query-error.filter';
 import helmet from 'helmet';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
   const config = app.get(ConfigService<ServerConfig>);
   const port = config.get<number>('port')!;
   const cors = config.get<CorsConfig>('cors')!;
   const log = config.get<LogConfig>('log')!;
 
   app.use(helmet());
+
   app.useLogger(
     new CustomLogger({
       logLevels: log.levels,
     }),
   );
 
-  await app.listen(port);
-  await app.listen(process.env.PORT ?? 3000, () => {
-    new Logger().log('🚀 Server listening on http://127.0.0.1:3000');
-  });
-
   app.useGlobalFilters(
     new HttpExceptionFilter(),
     new DrizzleQueryErrorFilter(),
   );
   app.setGlobalPrefix('api');
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -59,9 +58,24 @@ async function bootstrap() {
       },
     }),
   );
+
   app.enableCors({
     origin: cors.origins,
     maxAge: cors.maxAge,
+  });
+
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle('Auction Web Services')
+    .setDescription('The Auction API application')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+
+  const document = SwaggerModule.createDocument(app, swaggerConfig);
+
+  SwaggerModule.setup('docs', app, document);
+  await app.listen(port, () => {
+    new Logger().log(`🚀 Server listening on http://127.0.0.1:${port}`);
   });
 }
 bootstrap();

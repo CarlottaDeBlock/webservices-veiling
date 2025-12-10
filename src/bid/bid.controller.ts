@@ -21,16 +21,37 @@ import { Role } from '../auth/roles';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/currentUser.decorator';
 import type { Session } from '../types/auth';
+import { ApiBearerAuth, ApiTags, ApiResponse } from '@nestjs/swagger';
 
+@ApiTags('Bids')
+@ApiBearerAuth()
+@ApiResponse({
+  status: 401,
+  description: 'Unauthorized - you need to be signed in',
+})
 @Controller('bids')
 export class BidController {
   constructor(private readonly bidService: BidService) {}
 
+  @ApiResponse({
+    status: 200,
+    description: 'Get all bids visible for the current user',
+    type: BidListResponseDto,
+  })
   @Get()
   async getAll(@CurrentUser() user: Session): Promise<BidListResponseDto> {
     return this.bidService.getAll(user);
   }
 
+  @ApiResponse({
+    status: 200,
+    description: 'Get all bids for a given auction',
+    type: BidListResponseDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Auction not found',
+  })
   @Get('auction/:auctionId')
   async getByAuction(
     @Param('auctionId', ParseIntPipe) auctionId: number,
@@ -38,6 +59,15 @@ export class BidController {
     return this.bidService.getByAuction(auctionId);
   }
 
+  @ApiResponse({
+    status: 200,
+    description: 'Get bid by ID',
+    type: BidResponseDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Bid not found',
+  })
   @Get(':id')
   async getById(
     @Param('id', ParseIntPipe) id: number,
@@ -46,6 +76,15 @@ export class BidController {
     return this.bidService.getById(id, user);
   }
 
+  @ApiResponse({
+    status: 201,
+    description: 'Create bid',
+    type: BidResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid input data',
+  })
   @Post()
   @Roles(Role.USER)
   @HttpCode(HttpStatus.CREATED)
@@ -56,6 +95,19 @@ export class BidController {
     return this.bidService.create(createBidDto, user);
   }
 
+  @ApiResponse({
+    status: 200,
+    description: 'Update bid',
+    type: BidResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid input data',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Bid not found',
+  })
   @Put(':id')
   @Roles(Role.ADMIN)
   async update(
@@ -66,6 +118,14 @@ export class BidController {
     return this.bidService.updateById(id, dto, user);
   }
 
+  @ApiResponse({
+    status: 204,
+    description: 'Delete bid',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Bid not found',
+  })
   @Delete(':id')
   @Roles(Role.ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)

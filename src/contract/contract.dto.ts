@@ -1,38 +1,96 @@
-import { IsInt, Min, IsString, IsEnum } from 'class-validator';
 import { Type } from 'class-transformer';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsNumber, IsString } from 'nestjs-swagger-dto';
 
 export type ContractStatus = 'active' | 'completed' | 'cancelled';
 
 export class CreateContractDto {
-  @IsInt()
-  @Min(1)
+  @IsNumber({
+    name: 'auctionId',
+    description: 'ID of the related auction',
+    min: 1,
+    type: 'integer',
+  })
+  @ApiProperty({
+    example: 1,
+    description: 'ID of the related auction',
+  })
   auctionId: number;
 
-  @IsInt()
-  @Min(1)
+  @IsNumber({
+    name: 'providerId',
+    description: 'ID of the provider (user)',
+    min: 1,
+    type: 'integer',
+  })
+  @ApiProperty({
+    example: 3,
+    description: 'ID of the provider (user)',
+  })
   providerId: number;
 
-  @IsInt()
-  @Min(1)
+  @IsNumber({
+    name: 'requesterId',
+    description: 'ID of the requester (user)',
+    min: 1,
+    type: 'integer',
+  })
+  @ApiProperty({
+    example: 5,
+    description: 'ID of the requester (user)',
+  })
   requesterId: number;
 
-  @IsString()
+  @IsString({
+    name: 'agreedPrice',
+    description: 'Agreed price as string amount',
+  })
+  @ApiProperty({
+    example: '1200.00',
+    description: 'Agreed price for the contract',
+  })
   agreedPrice: string;
 
   @Type(() => Date)
+  @IsString({
+    name: 'startDate',
+    description: 'Contract start date in ISO format',
+  })
+  @ApiProperty({
+    example: '2025-10-01T00:00:00.000Z',
+    description: 'Start date of the contract',
+  })
   startDate: Date;
 
   @Type(() => Date)
+  @IsString({
+    name: 'endDate',
+    description: 'Contract end date in ISO format',
+  })
+  @ApiProperty({
+    example: '2025-12-31T00:00:00.000Z',
+    description: 'End date of the contract',
+  })
   endDate: Date;
 
-  @IsEnum(['active', 'completed', 'cancelled'])
+  @IsString({
+    name: 'status',
+    description: 'Status of the contract',
+  })
+  @ApiProperty({
+    example: 'active',
+    description: 'Status of the contract',
+    enum: ['active', 'completed', 'cancelled'],
+  })
   status: ContractStatus;
 }
 
 export class ContractResponseDto extends CreateContractDto {
+  @ApiProperty({ example: 1, description: 'ID of the contract' })
   contractId: number;
 }
 
 export class ContractListResponseDto {
+  @ApiProperty({ type: () => [ContractResponseDto] })
   items: ContractResponseDto[];
 }
