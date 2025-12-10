@@ -1,0 +1,1 @@
+ALTER TABLE `user` MODIFY COLUMN `is_provider` boolean NOT NULL DEFAULT true;

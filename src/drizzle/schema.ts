@@ -12,6 +12,7 @@ import {
   tinyint,
   mysqlEnum,
   primaryKey,
+  boolean,
 } from 'drizzle-orm/mysql-core';
 
 export const auctions = mysqlTable('auctions', {
@@ -51,10 +52,8 @@ export const lots = mysqlTable('lot', {
     .notNull(),
   status: mysqlEnum('status', ['open', 'closed', 'cancelled']).notNull(),
   extraInformation: text('extra_information'),
-  isReversed: tinyint('is_reversed', { unsigned: true }).notNull().default(0),
-  canBidHigher: tinyint('can_bid_higher', { unsigned: true })
-    .notNull()
-    .default(1),
+  isReversed: boolean('is_reversed').notNull().default(false),
+  canBidHigher: boolean('can_bid_higher').notNull().default(true),
 });
 
 export const bids = mysqlTable('bid', {
@@ -77,7 +76,7 @@ export const users = mysqlTable(
     email: varchar('email', { length: 255 }).notNull(),
     passwordHash: varchar('password_hash', { length: 255 }).notNull(),
     roles: json('roles').notNull(),
-    isProvider: tinyint('is_provider', { unsigned: true }).notNull().default(0),
+    isProvider: boolean('is_provider').notNull().default(true),
     rating: tinyint('rating', { unsigned: true }),
     companyId: int('company_id', { unsigned: true }).references(
       () => companies.companyId,

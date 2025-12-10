@@ -15,7 +15,9 @@ import helmet from 'helmet';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger: process.env.LOG_DISABLED === 'true' ? false : undefined,
+  });
 
   const config = app.get(ConfigService<ServerConfig>);
   const port = config.get<number>('port')!;
@@ -23,6 +25,14 @@ async function bootstrap() {
   const log = config.get<LogConfig>('log')!;
 
   app.use(helmet());
+
+  if (!log.disabled) {
+    app.useLogger(
+      new CustomLogger({
+        logLevels: log.levels,
+      }),
+    );
+  }
 
   app.useLogger(
     new CustomLogger({
@@ -72,8 +82,8 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);
-
   SwaggerModule.setup('docs', app, document);
+
   await app.listen(port, () => {
     new Logger().log(`🚀 Server listening on http://127.0.0.1:${port}`);
   });

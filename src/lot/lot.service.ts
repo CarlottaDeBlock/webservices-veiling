@@ -47,8 +47,8 @@ export class LotService {
       startBid: row.startBid,
       status: row.status,
       extraInformation: row.extraInformation,
-      isReversed: row.isReversed === 1,
-      canBidHigher: row.canBidHigher === 1,
+      isReversed: row.isReversed,
+      canBidHigher: row.canBidHigher,
       createdAt: row.createdAt,
     }));
 
@@ -102,8 +102,8 @@ export class LotService {
       startBid: lot.startBid,
       status: lot.status,
       extraInformation: lot.extraInformation,
-      isReversed: lot.isReversed === 1,
-      canBidHigher: lot.canBidHigher === 1,
+      isReversed: lot.isReversed,
+      canBidHigher: lot.canBidHigher,
       createdAt: lot.createdAt,
       bids: bidsWithUser,
     };
@@ -126,8 +126,8 @@ export class LotService {
         startBid: data.startBid,
         status: data.status,
         extraInformation: data.extraInformation,
-        isReversed: data.isReversed ? 1 : 0,
-        canBidHigher: data.canBidHigher ? 1 : 0,
+        isReversed: data.isReversed,
+        canBidHigher: data.canBidHigher,
       })
       .$returningId();
 
@@ -151,8 +151,8 @@ export class LotService {
         startBid: data.startBid,
         status: data.status,
         extraInformation: data.extraInformation,
-        isReversed: data.isReversed ? 1 : 0,
-        canBidHigher: data.canBidHigher ? 1 : 0,
+        isReversed: data.isReversed,
+        canBidHigher: data.canBidHigher,
       })
       .where(eq(lots.lotId, id));
 
@@ -190,8 +190,8 @@ export class LotService {
       startBid: fav.lot.startBid,
       status: fav.lot.status,
       extraInformation: fav.lot.extraInformation,
-      isReversed: fav.lot.isReversed === 1,
-      canBidHigher: fav.lot.canBidHigher === 1,
+      isReversed: fav.lot.isReversed,
+      canBidHigher: fav.lot.canBidHigher,
       createdAt: fav.lot.createdAt,
     }));
   }

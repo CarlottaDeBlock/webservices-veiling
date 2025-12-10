@@ -14,6 +14,7 @@ export default () => ({
     levels: process.env.LOG_LEVELS
       ? (JSON.parse(process.env.LOG_LEVELS) as LogLevel[])
       : ['log', 'error', 'warn'],
+    disabled: process.env.LOG_DISABLED === 'true',
   },
   auth: {
     hashLength: parseInt(process.env.AUTH_HASH_LENGTH || '32'),
@@ -50,6 +51,7 @@ export interface DatabaseConfig {
 
 export interface LogConfig {
   levels: LogLevel[];
+  disabled: boolean;
 }
 
 type LogLevel = 'log' | 'error' | 'warn' | 'debug' | 'verbose' | 'fatal';
