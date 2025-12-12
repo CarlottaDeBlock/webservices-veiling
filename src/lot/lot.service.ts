@@ -34,6 +34,7 @@ export class LotService {
 
     const items: LotResponseDto[] = rows.map((row) => ({
       lotId: row.lotId,
+      auctionId: row.auctionId,
       requestId: row.requestId,
       requesterId: row.requesterId,
       title: row.title,
@@ -77,7 +78,7 @@ export class LotService {
     const bidsWithUser: BidWithUserResponseDto[] = (lot.bids as BidRow[]).map(
       (b) => ({
         bidId: b.bidId,
-        amount: b.amount,
+        amount: Number(b.amount),
         bidTime: b.bidTime,
         bidder: {
           userId: b.bidder.userId,
@@ -89,6 +90,7 @@ export class LotService {
 
     return {
       lotId: lot.lotId,
+      auctionId: lot.auctionId,
       requestId: lot.requestId,
       requesterId: lot.requesterId,
       title: lot.title,
@@ -113,6 +115,7 @@ export class LotService {
     const [inserted] = await this.db
       .insert(lots)
       .values({
+        auctionId: data.auctionId,
         requestId: data.requestId,
         requesterId: data.requesterId,
         title: data.title,
@@ -177,6 +180,7 @@ export class LotService {
 
     return favorites.map((fav) => ({
       lotId: fav.lot.lotId,
+      auctionId: fav.lot.auctionId,
       requestId: fav.lot.requestId,
       requesterId: fav.lot.requesterId,
       title: fav.lot.title,

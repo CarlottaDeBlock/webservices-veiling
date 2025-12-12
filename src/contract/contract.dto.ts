@@ -1,8 +1,9 @@
 import { Type } from 'class-transformer';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, PartialType } from '@nestjs/swagger';
 import { IsNumber, IsString } from 'nestjs-swagger-dto';
+import { IsDate } from 'class-validator';
 
-export type ContractStatus = 'active' | 'completed' | 'cancelled';
+export type ContractStatus = 'pending' | 'active' | 'completed' | 'cancelled';
 
 export class CreateContractDto {
   @IsNumber({
@@ -52,10 +53,7 @@ export class CreateContractDto {
   agreedPrice: string;
 
   @Type(() => Date)
-  @IsString({
-    name: 'startDate',
-    description: 'Contract start date in ISO format',
-  })
+  @IsDate()
   @ApiProperty({
     example: '2025-10-01T00:00:00.000Z',
     description: 'Start date of the contract',
@@ -63,10 +61,7 @@ export class CreateContractDto {
   startDate: Date;
 
   @Type(() => Date)
-  @IsString({
-    name: 'endDate',
-    description: 'Contract end date in ISO format',
-  })
+  @IsDate()
   @ApiProperty({
     example: '2025-12-31T00:00:00.000Z',
     description: 'End date of the contract',
@@ -80,7 +75,16 @@ export class CreateContractDto {
   @ApiProperty({
     example: 'active',
     description: 'Status of the contract',
-    enum: ['active', 'completed', 'cancelled'],
+    enum: ['pending', 'active', 'completed', 'cancelled'],
+  })
+  status: ContractStatus;
+}
+
+export class UpdateContractDto extends PartialType(CreateContractDto) {
+  @IsString({ name: 'status', description: 'Status of the contract' })
+  @ApiProperty({
+    example: 'completed',
+    enum: ['pending', 'active', 'completed', 'cancelled'],
   })
   status: ContractStatus;
 }

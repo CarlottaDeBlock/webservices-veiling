@@ -26,10 +26,54 @@ export const loginUser = async (app: INestApplication): Promise<string> => {
   return extractToken(result);
 };
 
+export const loginProvider = async (app: INestApplication): Promise<string> => {
+  const authService = app.get(AuthService);
+  const result = await authService.login({
+    email: 'provider.user@example.com',
+    password: '12345678',
+  });
+
+  if (!result) {
+    throw new Error('No result received');
+  }
+
+  return extractToken(result);
+};
+
+export const loginRequester = async (
+  app: INestApplication,
+): Promise<string> => {
+  const authService = app.get(AuthService);
+  const result = await authService.login({
+    email: 'requester.user@example.com',
+    password: '12345678',
+  });
+
+  if (!result) {
+    throw new Error('No result received');
+  }
+
+  return extractToken(result);
+};
+
 export const loginAdmin = async (app: INestApplication): Promise<string> => {
   const authService = app.get(AuthService);
   const result = await authService.login({
     email: 'admin.user@example.com',
+    password: '12345678',
+  });
+
+  if (!result) {
+    throw new Error('No result received');
+  }
+
+  return extractToken(result);
+};
+
+export const loginStranger = async (app: INestApplication): Promise<string> => {
+  const authService = app.get(AuthService);
+  const result = await authService.login({
+    email: 'stranger.user@example.com',
     password: '12345678',
   });
 

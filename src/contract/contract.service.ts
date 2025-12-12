@@ -1,8 +1,13 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   CreateContractDto,
   ContractListResponseDto,
   ContractResponseDto,
+  UpdateContractDto,
 } from './contract.dto';
 import {
   type DatabaseProvider,
@@ -27,11 +32,16 @@ export class ContractService {
     const contract = await this.db.query.contracts.findFirst({
       where: eq(contracts.contractId, id),
     });
-    if (
-      !contract ||
-      (contract.providerId !== session.id &&
-        contract.requesterId !== session.id)
-    ) {
+    if (!contract) {
+      throw new NotFoundException({
+        message: 'Contract not found',
+        details: { id },
+      });
+    }
+    const isParticipant =
+      contract.providerId === session.id || contract.requesterId === session.id;
+
+    if (!isParticipant) {
       throw new NotFoundException({
         message: 'Contract not found',
         details: { id },
@@ -107,8 +117,22 @@ export class ContractService {
 
   async updateById(
     id: number,
-    data: CreateContractDto,
+    data: UpdateContractDto,
+    session: Session,
   ): Promise<ContractResponseDto> {
+    await this.ensureCanAccessContract(id, session);
+    const allowedStatuses = [
+      'pending',
+      'active',
+      'completed',
+      'cancelled',
+    ] as const;
+    if (!allowedStatuses.includes(data.status as any)) {
+      throw new BadRequestException({
+        message: 'Invalid status',
+        details: { body: { status: ['Status is not allowed'] } },
+      });
+    }
     await this.db
       .update(contracts)
       .set({
@@ -136,7 +160,8 @@ export class ContractService {
     return contract;
   }
 
-  async deleteById(id: number): Promise<void> {
+  async deleteById(id: number, session: Session): Promise<void> {
+    await this.ensureCanAccessContract(id, session);
     const [result] = await this.db
       .delete(contracts)
       .where(eq(contracts.contractId, id));

@@ -1,54 +1,55 @@
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNumber, IsString } from 'nestjs-swagger-dto';
 import { PublicUserResponseDto } from '../user/user.dto';
+import { IsNumber as IsNumberCv, IsOptional, Min } from 'class-validator';
 
 export class CreateBidDto {
-  @IsNumber({
-    name: 'auctionId',
-    description: 'ID of the auction this bid belongs to',
-    min: 1,
-    type: 'integer',
-  })
+  @IsNumberCv()
+  @IsOptional()
   @ApiProperty({
     example: 1,
     description: 'ID of the auction this bid belongs to',
   })
   auctionId: number;
 
-  @IsString({
-    name: 'amount',
-    description: 'Bid amount as string',
-  })
+  @IsNumberCv()
   @ApiProperty({
-    example: '150.00',
+    example: 1,
+    description: 'ID of the lot this bid belongs to',
+  })
+  lotId: number;
+
+  @IsNumberCv()
+  @Min(0.01)
+  @ApiProperty({
+    example: 150,
     description: 'Bid amount',
   })
-  amount: string;
+  amount: number;
 }
 
 export class UpdateBidDto {
-  @IsNumber({
-    name: 'auctionId',
-    description: 'ID of the auction this bid belongs to',
-    min: 1,
-    type: 'integer',
-  })
+  @IsNumberCv()
   @ApiProperty({
     example: 1,
     description: 'ID of the auction this bid belongs to',
   })
   auctionId: number;
 
-  @IsString({
-    name: 'amount',
-    description: 'Bid amount as string',
-  })
+  @IsNumberCv()
   @ApiProperty({
-    example: '160.00',
+    example: 1,
+    description: 'ID of the lot this bid belongs to',
+  })
+  lotId: number;
+
+  @IsNumberCv()
+  @Min(0.01)
+  @ApiProperty({
+    example: 160,
     description: 'Updated bid amount',
   })
-  amount: string;
+  amount: number;
 }
 
 export class BidResponseDto extends CreateBidDto {
@@ -67,8 +68,8 @@ export class BidWithUserResponseDto {
   @ApiProperty({ example: 42, description: 'ID of the bid' })
   bidId: number;
 
-  @ApiProperty({ example: '150.00', description: 'Bid amount' })
-  amount: string;
+  @ApiProperty({ example: 150, description: 'Bid amount' })
+  amount: number;
 
   @ApiProperty({
     example: '2025-09-12T09:15:00.000Z',

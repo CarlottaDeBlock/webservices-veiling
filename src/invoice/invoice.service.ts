@@ -8,10 +8,10 @@ import {
   type DatabaseProvider,
   InjectDrizzle,
 } from '../drizzle/drizzle.provider';
-import { eq, or } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import type { Session } from '../types/auth';
 import { Role } from '../auth/roles';
-import { invoices, contracts } from '../drizzle/schema';
+import { invoices } from '../drizzle/schema';
 
 @Injectable()
 export class InvoiceService {
@@ -42,21 +42,24 @@ export class InvoiceService {
 
   async getAll(session: Session): Promise<InvoiceListResponseDto> {
     const isAdmin = session.roles.includes(Role.ADMIN);
-    if (isAdmin) {
-      const items = await this.db.query.invoices.findMany({
-        with: {
-          contract: true,
-        },
-      });
-      return { items };
-    }
-    const items = await this.db.query.invoices.findMany({
+
+    const rows = await this.db.query.invoices.findMany({
       with: { contract: true },
-      where: or(
-        eq(contracts.providerId, session.id),
-        eq(contracts.requesterId, session.id),
-      ),
     });
+
+    const filtered = isAdmin
+      ? rows
+      : rows.filter(
+          (inv) =>
+            inv.contract &&
+            (inv.contract.providerId === session.id ||
+              inv.contract.requesterId === session.id),
+        );
+
+    const items: InvoiceResponseDto[] = filtered.map((row) => ({
+      ...row,
+      amount: Number(row.amount),
+    }));
 
     return { items };
   }
@@ -75,7 +78,10 @@ export class InvoiceService {
         details: { id },
       });
     }
-    return invoice;
+    return {
+      ...invoice,
+      amount: Number(invoice.amount),
+    };
   }
 
   async create(data: CreateInvoiceDto): Promise<InvoiceResponseDto> {
@@ -83,22 +89,26 @@ export class InvoiceService {
       .insert(invoices)
       .values({
         contractId: data.contractId,
-        amount: data.amount,
+        amount: data.amount.toString(),
         issueDate: data.issueDate,
         dueDate: data.dueDate,
         status: data.status,
       })
-      .$returningId(); // { invoiceId: number }
+      .$returningId();
 
     const row = await this.db.query.invoices.findFirst({
       where: eq(invoices.invoiceId, inserted.invoiceId),
+      with: { contract: true },
     });
 
     if (!row) {
       throw new Error('Failed to load created invoice');
     }
 
-    return row;
+    return {
+      ...row,
+      amount: Number(row.amount),
+    };
   }
 
   async updateById(
@@ -109,7 +119,7 @@ export class InvoiceService {
       .update(invoices)
       .set({
         contractId: data.contractId,
-        amount: data.amount,
+        amount: data.amount.toString(),
         issueDate: data.issueDate,
         dueDate: data.dueDate,
         status: data.status,
@@ -127,7 +137,10 @@ export class InvoiceService {
       });
     }
 
-    return row;
+    return {
+      ...row,
+      amount: Number(row.amount),
+    };
   }
 
   async deleteById(id: number): Promise<void> {

@@ -101,7 +101,7 @@ export class AuthService {
         email,
         passwordHash: passwordHash,
         roles: [Role.USER],
-        isProvider: isProvider ? 1 : 0,
+        isProvider: isProvider ? true : false,
         rating: null,
         companyId,
         role: isProvider ? 'provider' : 'user',

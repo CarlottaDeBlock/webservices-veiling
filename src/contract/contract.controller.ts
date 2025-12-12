@@ -15,6 +15,7 @@ import {
   CreateContractDto,
   ContractListResponseDto,
   ContractResponseDto,
+  UpdateContractDto,
 } from './contract.dto';
 import { CurrentUser } from '../auth/decorators/currentUser.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -91,12 +92,12 @@ export class ContractController {
     description: 'Contract not found',
   })
   @Put(':id')
-  @Roles(Role.ADMIN, Role.PROVIDER)
   async update(
     @Param('id', ParseIntPipe) id: number,
-    @Body() updateContractDto: CreateContractDto,
+    @CurrentUser() user: Session,
+    @Body() updateContractDto: UpdateContractDto,
   ): Promise<ContractResponseDto> {
-    return this.contractService.updateById(id, updateContractDto);
+    return this.contractService.updateById(id, updateContractDto, user);
   }
 
   @ApiResponse({
@@ -108,9 +109,11 @@ export class ContractController {
     description: 'Contract not found',
   })
   @Delete(':id')
-  @Roles(Role.ADMIN, Role.PROVIDER)
   @HttpCode(HttpStatus.NO_CONTENT)
-  async delete(@Param('id', ParseIntPipe) id: number): Promise<void> {
-    await this.contractService.deleteById(id);
+  async delete(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: Session,
+  ): Promise<void> {
+    await this.contractService.deleteById(id, user);
   }
 }

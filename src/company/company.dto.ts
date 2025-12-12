@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Matches } from 'class-validator';
 import { IsString } from 'nestjs-swagger-dto';
 
 export type CompanyStatus = 'active' | 'inactive';
@@ -19,6 +20,9 @@ export class CreateCompanyDto {
     name: 'vatNumber',
     description: 'VAT number of the company',
     maxLength: 32,
+  })
+  @Matches(/^BE[0-9]{10}$/, {
+    message: 'vatNumber must be a valid Belgian VAT number',
   })
   @ApiProperty({
     example: 'BE0123456789',

@@ -61,6 +61,22 @@ export class BidController {
 
   @ApiResponse({
     status: 200,
+    description: 'Get all bids for a given lot',
+    type: BidListResponseDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Lot not found',
+  })
+  @Get('lot/:lotId')
+  async getByLot(
+    @Param('lotId', ParseIntPipe) lotId: number,
+  ): Promise<BidListResponseDto> {
+    return this.bidService.getByLot(lotId);
+  }
+
+  @ApiResponse({
+    status: 200,
     description: 'Get bid by ID',
     type: BidResponseDto,
   })

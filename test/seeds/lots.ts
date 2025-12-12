@@ -4,6 +4,7 @@ import { lots } from '../../src/drizzle/schema';
 export const LOTS_SEED: (typeof lots.$inferInsert)[] = [
   {
     lotId: 1,
+    auctionId: 1,
     requestId: 1,
     requesterId: 1,
     title: 'Transport 50 beer kegs',
@@ -14,7 +15,7 @@ export const LOTS_SEED: (typeof lots.$inferInsert)[] = [
     category: 'Transport',
     reservedPrice: '500.00',
     buyPrice: '750.00',
-    startBid: '100.00',
+    startBid: '50.00',
     status: 'open',
     extraInformation: null,
     isReversed: true,
@@ -23,6 +24,7 @@ export const LOTS_SEED: (typeof lots.$inferInsert)[] = [
   },
   {
     lotId: 2,
+    auctionId: 1,
     requestId: 2,
     requesterId: 2,
     title: 'Warehouse handling',

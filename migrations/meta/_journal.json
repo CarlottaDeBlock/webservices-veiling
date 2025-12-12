@@ -43,6 +43,27 @@
       "when": 1765380522352,
       "tag": "0005_far_arachne",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1765448518813,
+      "tag": "0006_smart_piledriver",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1765450651490,
+      "tag": "0007_bored_micromax",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "5",
+      "when": 1765550773624,
+      "tag": "0008_burly_dark_beast",
+      "breakpoints": true
     }
   ]
 }

@@ -1,0 +1,2 @@
+ALTER TABLE `lot` ADD `auction_id` int unsigned NOT NULL;--> statement-breakpoint
+ALTER TABLE `lot` ADD CONSTRAINT `lot_auction_id_auctions_auction_id_fk` FOREIGN KEY (`auction_id`) REFERENCES `auctions`(`auction_id`) ON DELETE cascade ON UPDATE no action;

@@ -28,6 +28,9 @@ export const auctions = mysqlTable('auctions', {
 
 export const lots = mysqlTable('lot', {
   lotId: int('lot_id', { unsigned: true }).primaryKey().autoincrement(),
+  auctionId: int('auction_id', { unsigned: true })
+    .references(() => auctions.auctionId, { onDelete: 'cascade' })
+    .notNull(),
   requestId: int('request_id', { unsigned: true }).notNull(),
   requesterId: int('requester_id', { unsigned: true })
     .references(() => users.userId, { onDelete: 'no action' })
@@ -58,6 +61,7 @@ export const lots = mysqlTable('lot', {
 
 export const bids = mysqlTable('bid', {
   bidId: int('bid_id', { unsigned: true }).primaryKey().autoincrement(),
+  lotId: int('lot_id').notNull(),
   auctionId: int('auction_id', { unsigned: true })
     .references(() => auctions.auctionId, { onDelete: 'cascade' })
     .notNull(),
@@ -120,7 +124,12 @@ export const contracts = mysqlTable('contract', {
   agreedPrice: decimal('agreed_price', { precision: 10, scale: 2 }).notNull(),
   startDate: datetime('start_date', { fsp: 3 }).notNull(),
   endDate: datetime('end_date', { fsp: 3 }).notNull(),
-  status: mysqlEnum('status', ['active', 'completed', 'cancelled']).notNull(),
+  status: mysqlEnum('status', [
+    'pending',
+    'active',
+    'completed',
+    'cancelled',
+  ]).notNull(),
 });
 
 export const reviews = mysqlTable('review', {
@@ -179,6 +188,12 @@ export const bidsRelations = relations(bids, ({ one }) => ({
   bidder: one(users, {
     fields: [bids.bidderId],
     references: [users.userId],
+    relationName: 'userBids',
+  }),
+  lot: one(lots, {
+    relationName: 'lotBids',
+    fields: [bids.lotId],
+    references: [lots.lotId],
   }),
   auction: one(auctions, {
     fields: [bids.auctionId],
@@ -187,14 +202,22 @@ export const bidsRelations = relations(bids, ({ one }) => ({
 }));
 
 export const lotsRelations = relations(lots, ({ one, many }) => ({
-  bids: many(bids),
+  auction: one(auctions, {
+    fields: [lots.auctionId],
+    references: [auctions.auctionId],
+  }),
+  bids: many(bids, {
+    relationName: 'lotBids',
+  }),
   requester: one(users, {
     fields: [lots.requesterId],
     references: [users.userId],
+    relationName: 'requester',
   }),
   winner: one(users, {
     fields: [lots.winnerId],
     references: [users.userId],
+    relationName: 'winner',
   }),
   favoredBy: many(userFavoriteLots),
 }));
@@ -204,13 +227,15 @@ export const usersRelations = relations(users, ({ one, many }) => ({
     fields: [users.companyId],
     references: [companies.companyId],
   }),
-  lotsRequested: many(lots),
-  lotsWon: many(lots),
-  bids: many(bids),
-  contractsAsProvider: many(contracts),
-  contractsAsRequester: many(contracts),
-  reviewsWritten: many(reviews),
-  reviewsReceived: many(reviews),
+  lotsRequested: many(lots, { relationName: 'requester' }),
+  lotsWon: many(lots, { relationName: 'winner' }),
+  bids: many(bids, { relationName: 'userBids' }),
+  contractsAsProvider: many(contracts, { relationName: 'contractsAsProvider' }),
+  contractsAsRequester: many(contracts, {
+    relationName: 'contractsAsRequester',
+  }),
+  reviewsWritten: many(reviews, { relationName: 'reviewsWritten' }),
+  reviewsReceived: many(reviews, { relationName: 'reviewsReceived' }),
   favoriteLots: many(userFavoriteLots),
 }));
 
@@ -222,30 +247,35 @@ export const contractsRelations = relations(contracts, ({ one, many }) => ({
   provider: one(users, {
     fields: [contracts.providerId],
     references: [users.userId],
+    relationName: 'contractsAsProvider',
   }),
   requester: one(users, {
     fields: [contracts.requesterId],
     references: [users.userId],
+    relationName: 'contractsAsRequester',
   }),
   invoice: one(invoices, {
     fields: [contracts.contractId],
     references: [invoices.contractId],
   }),
-  reviews: many(reviews),
+  reviews: many(reviews, { relationName: 'contractReviews' }),
 }));
 
 export const reviewsRelations = relations(reviews, ({ one }) => ({
   contract: one(contracts, {
     fields: [reviews.contractId],
     references: [contracts.contractId],
+    relationName: 'contractReviews',
   }),
   reviewer: one(users, {
     fields: [reviews.reviewerId],
     references: [users.userId],
+    relationName: 'reviewsWritten',
   }),
   reviewedUser: one(users, {
     fields: [reviews.reviewedUserId],
     references: [users.userId],
+    relationName: 'reviewsReceived',
   }),
 }));
 

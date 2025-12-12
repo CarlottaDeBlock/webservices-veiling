@@ -1,0 +1,1 @@
+ALTER TABLE `bid` ADD `lot_id` int NOT NULL;

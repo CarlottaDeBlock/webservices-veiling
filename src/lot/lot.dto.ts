@@ -2,8 +2,21 @@ import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 import { BidWithUserResponseDto } from '../bid/bid.dto';
 import { IsString, IsNumber, IsBoolean } from 'nestjs-swagger-dto';
+import { IsDate, IsOptional } from 'class-validator';
 
 export class CreateLotDto {
+  @IsNumber({
+    name: 'auctionId',
+    description: 'ID of the auction this lot belongs to',
+    min: 1,
+    type: 'integer',
+  })
+  @ApiProperty({
+    example: 1,
+    description: 'ID of the auction this lot belongs to',
+  })
+  auctionId: number;
+
   @IsNumber({
     name: 'requestId',
     description: 'ID of the related request',
@@ -46,10 +59,7 @@ export class CreateLotDto {
   description: string;
 
   @Type(() => Date)
-  @IsString({
-    name: 'startTime',
-    description: 'Start time in ISO format',
-  })
+  @IsDate()
   @ApiProperty({
     example: '2025-09-12T08:00:00.00Z',
     description: 'Start time of the lot',
@@ -57,10 +67,7 @@ export class CreateLotDto {
   startTime: Date;
 
   @Type(() => Date)
-  @IsString({
-    name: 'endTime',
-    description: 'End time in ISO format',
-  })
+  @IsDate()
   @ApiProperty({
     example: '2025-09-13T08:00:00.000Z',
     description: 'End time of the lot',
@@ -75,12 +82,13 @@ export class CreateLotDto {
     type: 'integer',
     optional: true,
   })
+  @IsOptional()
   @ApiProperty({
     example: 5,
     description: 'ID of the winning bidder, if any',
     nullable: true,
   })
-  winnerId: number | null;
+  winnerId?: number | null;
 
   @IsString({
     name: 'category',
@@ -107,12 +115,13 @@ export class CreateLotDto {
     description: 'Buy‑now price as string amount',
     optional: true,
   })
+  @IsOptional()
   @ApiProperty({
     example: '300.00',
     description: 'Buy-now price, if any',
     nullable: true,
   })
-  buyPrice: string | null;
+  buyPrice?: string | null;
 
   @IsString({
     name: 'startBid',
@@ -140,12 +149,13 @@ export class CreateLotDto {
     description: 'Extra information about the lot',
     optional: true,
   })
+  @IsOptional()
   @ApiProperty({
     example: 'Loading dock at 8:00AM',
     description: 'Extra information about the lot',
     nullable: true,
   })
-  extraInformation: string | null;
+  extraInformation?: string | null;
 
   @IsBoolean({
     name: 'isReversed',

@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import {
   BidListResponseDto,
   BidResponseDto,
@@ -9,8 +13,8 @@ import {
   type DatabaseProvider,
   InjectDrizzle,
 } from '../drizzle/drizzle.provider';
-import { and, eq } from 'drizzle-orm';
-import { bids } from '../drizzle/schema';
+import { and, eq, desc } from 'drizzle-orm';
+import { bids, lots, auctions } from '../drizzle/schema';
 import type { Session } from '../types/auth';
 import { Role } from '../auth/roles';
 
@@ -18,10 +22,11 @@ import { Role } from '../auth/roles';
 export class BidService {
   async getAll(session: Session): Promise<BidListResponseDto> {
     const isAdmin = session.roles.includes(Role.ADMIN);
-    const items = await this.db.query.bids.findMany({
+    const rows = await this.db.query.bids.findMany({
       where: isAdmin ? undefined : eq(bids.bidderId, session.id),
       columns: {
         bidId: true,
+        lotId: true,
         auctionId: true,
         bidderId: true,
         amount: true,
@@ -32,34 +37,56 @@ export class BidService {
         auction: true,
       },
     });
+    const items: BidResponseDto[] = rows.map((row) => ({
+      ...row,
+      amount: Number(row.amount),
+    }));
     return { items };
   }
 
   async getByAuction(auctionId: number): Promise<BidListResponseDto> {
-    const items = await this.db.query.bids.findMany({
+    const rows = await this.db.query.bids.findMany({
       where: eq(bids.auctionId, auctionId),
       with: {
         bidder: true,
       },
     });
+    const items: BidResponseDto[] = rows.map((row) => ({
+      ...row,
+      amount: Number(row.amount),
+    }));
+    return { items };
+  }
+
+  async getByLot(lotId: number): Promise<BidListResponseDto> {
+    const rows = await this.db.query.bids.findMany({
+      where: eq(bids.lotId, lotId),
+      with: {
+        bidder: true,
+      },
+    });
+    const items: BidResponseDto[] = rows.map((row) => ({
+      ...row,
+      amount: Number(row.amount),
+    }));
     return { items };
   }
 
   async getById(bidId: number, session: Session): Promise<BidResponseDto> {
-    const bid = await this.db.query.bids.findFirst({
+    const row = await this.db.query.bids.findFirst({
       where: eq(bids.bidId, bidId),
       with: {
         bidder: true,
         auction: true,
       },
     });
-    if (!bid) {
+    if (!row) {
       throw new NotFoundException({
         message: 'Bid not found',
         details: { bidId },
       });
     }
-    const isOwner = bid.bidderId === session.id;
+    const isOwner = row.bidderId === session.id;
     const isAdmin = session.roles.includes(Role.ADMIN);
     if (!isOwner && !isAdmin) {
       throw new NotFoundException({
@@ -67,27 +94,87 @@ export class BidService {
         details: { bidId },
       });
     }
+    const bid: BidResponseDto = {
+      ...row,
+      amount: Number(row.amount),
+    };
     return bid;
   }
 
   async create(data: CreateBidDto, session: Session): Promise<BidResponseDto> {
+    const lot = await this.db.query.lots.findFirst({
+      where: eq(lots.lotId, data.lotId),
+    });
+    if (!lot) {
+      throw new NotFoundException({
+        message: 'Lot not found',
+        details: { lotId: data.lotId },
+      });
+    }
+
+    if (lot.status !== 'open') {
+      throw new BadRequestException({
+        message: 'Lot is not open for bidding',
+        details: { lotId: data.lotId },
+      });
+    }
+
+    const auctionId = data.auctionId ?? lot.auctionId;
+    const auction = await this.db.query.auctions.findFirst({
+      where: eq(auctions.auctionId, auctionId),
+    });
+    if (!auction) {
+      throw new NotFoundException({
+        message: 'Auction not found',
+        details: { auctionId },
+      });
+    }
+
+    const lastBid = await this.db.query.bids.findFirst({
+      where: eq(bids.lotId, data.lotId),
+      orderBy: (b) => desc(b.bidTime),
+    });
+
+    const minAllowed = lastBid
+      ? Number(lastBid.amount)
+      : Number(lot.startBid ?? 0);
+
+    if (data.amount <= minAllowed) {
+      throw new BadRequestException({
+        message: 'Amount is below minimum or last bid',
+        details: {
+          body: { amount: ['Amount must be greater than current bid'] },
+        },
+      });
+    }
+
     const [inserted] = await this.db
       .insert(bids)
       .values({
-        auctionId: data.auctionId,
+        auctionId,
+        lotId: data.lotId,
         bidderId: session.id,
-        amount: data.amount,
+        amount: data.amount.toString(),
         bidTime: new Date(),
       })
       .$returningId();
+
     const row = await this.db.query.bids.findFirst({
       where: eq(bids.bidId, inserted.bidId),
+      with: {
+        bidder: true,
+        auction: true,
+      },
     });
 
     if (!row) {
       throw new Error('Failed to load created bid');
     }
-    return row;
+    const bid: BidResponseDto = {
+      ...row,
+      amount: Number(row.amount),
+    };
+    return bid;
   }
 
   async updateById(
@@ -95,16 +182,16 @@ export class BidService {
     dto: UpdateBidDto,
     session: Session,
   ): Promise<BidResponseDto> {
-    const bid = await this.db.query.bids.findFirst({
+    const existing = await this.db.query.bids.findFirst({
       where: eq(bids.bidId, id),
     });
-    if (!bid) {
+    if (!existing) {
       throw new NotFoundException({
         message: 'Bid not found',
         details: { id },
       });
     }
-    const isOwner = bid.bidderId === session.id;
+    const isOwner = existing.bidderId === session.id;
     const isAdmin = session.roles.includes(Role.ADMIN);
     if (!isOwner && !isAdmin) {
       throw new NotFoundException({
@@ -115,8 +202,9 @@ export class BidService {
     await this.db
       .update(bids)
       .set({
-        amount: dto.amount,
+        amount: dto.amount.toString(),
         auctionId: dto.auctionId,
+        lotId: dto.lotId,
       })
       .where(and(eq(bids.bidId, id)));
 
@@ -129,7 +217,7 @@ export class BidService {
     });
     if (!bid) {
       throw new NotFoundException({
-        message: 'Bid not found',
+        message: 'Bid not found (missing)',
         details: { id },
       });
     }
@@ -137,7 +225,7 @@ export class BidService {
     const isAdmin = session.roles.includes(Role.ADMIN);
     if (!isOwner && !isAdmin) {
       throw new NotFoundException({
-        message: 'Bid not found',
+        message: 'Bid not found (forbidden)',
         details: { id },
       });
     }

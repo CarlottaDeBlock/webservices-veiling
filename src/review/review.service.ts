@@ -8,7 +8,7 @@ import {
   type DatabaseProvider,
   InjectDrizzle,
 } from '../drizzle/drizzle.provider';
-import { reviews } from '../drizzle/schema';
+import { reviews, contracts } from '../drizzle/schema';
 import type { Session } from '../types/auth';
 import { Role } from '../auth/roles';
 import { eq, or } from 'drizzle-orm';
@@ -78,6 +78,25 @@ export class ReviewService {
     data: CreateReviewDto,
     session: Session,
   ): Promise<ReviewResponseDto> {
+    const contract = await this.db.query.contracts.findFirst({
+      where: eq(contracts.contractId, data.contractId),
+    });
+    if (!contract) {
+      throw new NotFoundException({
+        message: 'Contract not found',
+        details: { contractId: data.contractId },
+      });
+    }
+
+    const isParticipant =
+      contract.providerId === session.id || contract.requesterId === session.id;
+
+    if (!isParticipant) {
+      throw new NotFoundException({
+        message: 'Review not found',
+        details: { contractId: data.contractId },
+      });
+    }
     const [inserted] = await this.db
       .insert(reviews)
       .values({
