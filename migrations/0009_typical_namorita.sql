@@ -1,0 +1,1 @@
+ALTER TABLE `auctions` ADD `category` enum('Transport','Horeca','Rollend Materiaal','Vastgoed') NOT NULL;

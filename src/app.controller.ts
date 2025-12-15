@@ -8,4 +8,10 @@ export class AppController {
   getRoot() {
     return { message: 'Auction API' };
   }
+
+  @Public()
+  @Get('ping-public')
+  ping() {
+    return { ok: true };
+  }
 }

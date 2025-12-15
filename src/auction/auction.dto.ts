@@ -3,6 +3,11 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsNumber } from 'nestjs-swagger-dto';
 
 export type AuctionStatus = 'open' | 'closed' | 'cancelled';
+export type AuctionCategory =
+  | 'Transport'
+  | 'Horeca'
+  | 'Rollend Materiaal'
+  | 'Vastgoed';
 
 export class CreateAuctionRequestDto {
   @IsNumber({
@@ -16,6 +21,17 @@ export class CreateAuctionRequestDto {
     description: 'ID of the related request',
   })
   requestId: number;
+
+  @IsString({
+    name: 'category',
+    description: 'Category of the auction',
+  })
+  @ApiProperty({
+    example: 'Transport',
+    description: 'Category of the auction',
+    enum: ['Transport', 'Horeca', 'Rollend Materiaal', 'Vastgoed'],
+  })
+  category: AuctionCategory;
 
   @Type(() => Date)
   @IsString({

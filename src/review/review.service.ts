@@ -11,7 +11,7 @@ import {
 import { reviews, contracts } from '../drizzle/schema';
 import type { Session } from '../types/auth';
 import { Role } from '../auth/roles';
-import { eq, or } from 'drizzle-orm';
+import { eq, or, desc } from 'drizzle-orm';
 
 @Injectable()
 export class ReviewService {
@@ -52,6 +52,19 @@ export class ReviewService {
       },
     });
     return { items };
+  }
+
+  async getAllPublic(): Promise<ReviewListResponseDto> {
+    const rows = await this.db.query.reviews.findMany({});
+    return { items: rows }; // of mappen naar dto
+  }
+
+  async getByReviewedUserId(userId: number): Promise<ReviewListResponseDto> {
+    const rows = await this.db.query.reviews.findMany({
+      where: eq(reviews.reviewedUserId, userId),
+      orderBy: [desc(reviews.createdAt)],
+    });
+    return { items: rows };
   }
 
   async getById(id: number, session: Session): Promise<ReviewResponseDto> {

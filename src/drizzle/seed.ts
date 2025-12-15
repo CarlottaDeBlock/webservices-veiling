@@ -80,7 +80,7 @@ async function seedUsers() {
       username: 'requester_anna',
       email: 'anna.requester@test.dev',
       passwordHash: await hashPassword('12345678'),
-      isProvider: 0,
+      isProvider: false,
       rating: 5,
       companyId: 1,
       role: 'requester',
@@ -92,7 +92,7 @@ async function seedUsers() {
       username: 'provider_bob',
       email: 'bob.provider@test.dev',
       passwordHash: await hashPassword('12345678'),
-      isProvider: 1,
+      isProvider: true,
       rating: 4,
       companyId: 2,
       role: 'provider',
@@ -104,61 +104,28 @@ async function seedUsers() {
       username: 'admin',
       email: 'admin@test.dev',
       passwordHash: await hashPassword('12345678'),
-      isProvider: 1,
+      isProvider: true,
       rating: 5,
       companyId: 2,
       role: 'admin',
       language: 'en',
       roles: [Role.USER, Role.ADMIN],
     },
+    {
+      userId: 4,
+      username: 'stranger',
+      email: 'stranger@example.com',
+      passwordHash: 'hashedpassword4',
+      roles: Role.USER,
+      isProvider: false,
+      rating: 3,
+      companyId: 1,
+      role: 'user',
+      language: 'en',
+    },
   ]);
 
   console.log('✅ Users seeded\n');
-}
-
-async function seedLots() {
-  console.log('📦 Seeding lots...');
-
-  await db.insert(schema.lots).values([
-    {
-      lotId: 1,
-      requestId: 1001,
-      requesterId: 1,
-      title: 'Transport 10 pallets Gent → Antwerpen',
-      description: 'Verzending van 10 pallets niet-bederfbare goederen.',
-      startTime: new Date('2025-01-10T09:00:00.000Z'),
-      endTime: new Date('2025-01-10T17:00:00.000Z'),
-      winnerId: null,
-      category: 'transport',
-      reservedPrice: '800.00',
-      buyPrice: '1200.00',
-      startBid: '500.00',
-      status: 'open',
-      extraInformation: 'Laadplaats met dok, heftruck aanwezig.',
-      isReversed: 1,
-      canBidHigher: 1,
-    },
-    {
-      lotId: 2,
-      requestId: 1002,
-      requesterId: 1,
-      title: 'Opslagruimte 3 maanden',
-      description: 'Opslag van 20 pallets droge voeding.',
-      startTime: new Date('2025-02-01T08:00:00.000Z'),
-      endTime: new Date('2025-02-05T16:00:00.000Z'),
-      winnerId: null,
-      category: 'storage',
-      reservedPrice: '1500.00',
-      buyPrice: null,
-      startBid: '900.00',
-      status: 'open',
-      extraInformation: 'Magazijn met temperatuurcontrole niet nodig.',
-      isReversed: 1,
-      canBidHigher: 1,
-    },
-  ]);
-
-  console.log('✅ Lots seeded\n');
 }
 
 async function seedAuctions() {
@@ -167,16 +134,130 @@ async function seedAuctions() {
   await db.insert(schema.auctions).values([
     {
       auctionId: 1,
+      category: 'Transport',
       requestId: 1001,
-      startTime: new Date('2025-01-08T09:00:00.000Z'),
-      endTime: new Date('2025-01-09T17:00:00.000Z'),
+      startTime: new Date('2026-01-08T09:00:00.000Z'),
+      endTime: new Date('2026-01-09T17:00:00.000Z'),
       status: 'open',
     },
     {
       auctionId: 2,
+      category: 'Horeca',
       requestId: 1002,
-      startTime: new Date('2025-01-20T09:00:00.000Z'),
-      endTime: new Date('2025-01-22T17:00:00.000Z'),
+      startTime: new Date('2026-01-20T09:00:00.000Z'),
+      endTime: new Date('2026-01-22T17:00:00.000Z'),
+      status: 'open',
+    },
+    {
+      auctionId: 3,
+      category: 'Rollend Materiaal',
+      requestId: 1002,
+      startTime: new Date('2026-10-23T09:00:00.000Z'),
+      endTime: new Date('2026-11-24T17:00:00.000Z'),
+      status: 'open',
+    },
+    {
+      auctionId: 4,
+      category: 'Vastgoed',
+      requestId: 1002,
+      startTime: new Date('2026-01-20T09:00:00.000Z'),
+      endTime: new Date('2026-01-22T17:00:00.000Z'),
+      status: 'closed',
+    },
+    {
+      auctionId: 5,
+      category: 'Horeca',
+      requestId: 1002,
+      startTime: new Date('2026-01-20T09:00:00.000Z'),
+      endTime: new Date('2026-01-22T17:00:00.000Z'),
+      status: 'open',
+    },
+    {
+      auctionId: 6,
+      category: 'Rollend Materiaal',
+      requestId: 1002,
+      startTime: new Date('2026-10-23T09:00:00.000Z'),
+      endTime: new Date('2026-11-24T17:00:00.000Z'),
+      status: 'open',
+    },
+    {
+      auctionId: 7,
+      category: 'Vastgoed',
+      requestId: 1002,
+      startTime: new Date('2026-01-20T09:00:00.000Z'),
+      endTime: new Date('2026-01-22T17:00:00.000Z'),
+      status: 'closed',
+    },
+    {
+      auctionId: 8,
+      category: 'Horeca',
+      requestId: 1002,
+      startTime: new Date('2026-01-20T09:00:00.000Z'),
+      endTime: new Date('2026-01-22T17:00:00.000Z'),
+      status: 'open',
+    },
+    {
+      auctionId: 9,
+      category: 'Transport',
+      requestId: 1001,
+      startTime: new Date('2026-01-08T09:00:00.000Z'),
+      endTime: new Date('2026-01-09T17:00:00.000Z'),
+      status: 'open',
+    },
+    {
+      auctionId: 10,
+      category: 'Horeca',
+      requestId: 1002,
+      startTime: new Date('2026-01-20T09:00:00.000Z'),
+      endTime: new Date('2026-01-22T17:00:00.000Z'),
+      status: 'open',
+    },
+    {
+      auctionId: 11,
+      category: 'Rollend Materiaal',
+      requestId: 1002,
+      startTime: new Date('2026-10-23T09:00:00.000Z'),
+      endTime: new Date('2026-11-24T17:00:00.000Z'),
+      status: 'open',
+    },
+    {
+      auctionId: 12,
+      category: 'Vastgoed',
+      requestId: 1002,
+      startTime: new Date('2026-01-20T09:00:00.000Z'),
+      endTime: new Date('2026-01-22T17:00:00.000Z'),
+      status: 'closed',
+    },
+    {
+      auctionId: 13,
+      category: 'Horeca',
+      requestId: 1002,
+      startTime: new Date('2026-01-20T09:00:00.000Z'),
+      endTime: new Date('2026-01-22T17:00:00.000Z'),
+      status: 'open',
+    },
+    {
+      auctionId: 14,
+      category: 'Rollend Materiaal',
+      requestId: 1002,
+      startTime: new Date('2026-10-23T09:00:00.000Z'),
+      endTime: new Date('2026-11-24T17:00:00.000Z'),
+      status: 'open',
+    },
+    {
+      auctionId: 15,
+      category: 'Vastgoed',
+      requestId: 1002,
+      startTime: new Date('2026-01-20T09:00:00.000Z'),
+      endTime: new Date('2026-01-22T17:00:00.000Z'),
+      status: 'closed',
+    },
+    {
+      auctionId: 16,
+      category: 'Horeca',
+      requestId: 1002,
+      startTime: new Date('2026-01-20T09:00:00.000Z'),
+      endTime: new Date('2026-01-22T17:00:00.000Z'),
       status: 'open',
     },
   ]);
@@ -184,26 +265,73 @@ async function seedAuctions() {
   console.log('✅ Auctions seeded\n');
 }
 
+async function seedLots() {
+  console.log('📦 Seeding lots...');
+
+  await db.insert(schema.lots).values([
+    {
+      auctionId: 1,
+      requestId: 1,
+      requesterId: 1,
+      title: 'Transport 10 pallets Gent → Antwerpen',
+      description: 'Verzending van 10 pallets niet-bederfbare goederen.',
+      startTime: new Date('2026-01-10T09:00:00.000Z'),
+      endTime: new Date('2026-01-10T17:00:00.000Z'),
+      winnerId: null,
+      category: 'transport',
+      reservedPrice: '800.00',
+      buyPrice: '1200.00',
+      startBid: '500.00',
+      status: 'open',
+      extraInformation: 'Laadplaats met dok, heftruck aanwezig.',
+      isReversed: true,
+      canBidHigher: true,
+      createdAt: new Date('2025-09-12T08:55:15.039Z'),
+    },
+    {
+      auctionId: 1,
+      requestId: 1002,
+      requesterId: 1,
+      title: 'Opslagruimte 3 maanden',
+      description: 'Opslag van 20 pallets droge voeding.',
+      startTime: new Date('2026-02-01T08:00:00.000Z'),
+      endTime: new Date('2026-02-05T16:00:00.000Z'),
+      winnerId: null,
+      category: 'storage',
+      reservedPrice: '1500.00',
+      buyPrice: null,
+      startBid: '900.00',
+      status: 'open',
+      extraInformation: 'Magazijn met temperatuurcontrole niet nodig.',
+      isReversed: true,
+      canBidHigher: true,
+      createdAt: new Date('2025-09-12T08:55:15.039Z'),
+    },
+  ]);
+
+  console.log('✅ Lots seeded\n');
+}
+
 async function seedBids() {
   console.log('💶 Seeding bids...');
 
   await db.insert(schema.bids).values([
     {
-      bidId: 1,
+      lotId: 1,
       auctionId: 1,
       bidderId: 2,
       amount: '750.00',
       bidTime: new Date('2025-01-08T10:00:00.000Z'),
     },
     {
-      bidId: 2,
+      lotId: 2,
       auctionId: 1,
       bidderId: 3,
       amount: '700.00',
       bidTime: new Date('2025-01-08T11:30:00.000Z'),
     },
     {
-      bidId: 3,
+      lotId: 1,
       auctionId: 2,
       bidderId: 2,
       amount: '1200.00',
@@ -302,8 +430,8 @@ async function main() {
 
   await seedCompanies();
   await seedUsers();
-  await seedLots();
   await seedAuctions();
+  await seedLots();
   await seedBids();
   await seedContracts();
   await seedInvoices();

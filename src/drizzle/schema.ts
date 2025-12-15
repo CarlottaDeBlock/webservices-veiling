@@ -17,6 +17,12 @@ import {
 
 export const auctions = mysqlTable('auctions', {
   auctionId: int('auction_id', { unsigned: true }).primaryKey().autoincrement(),
+  category: mysqlEnum('category', [
+    'Transport',
+    'Horeca',
+    'Rollend Materiaal',
+    'Vastgoed',
+  ]).notNull(),
   requestId: int('request_id', { unsigned: true }).notNull(),
   startTime: datetime('start_time', { fsp: 3 }).notNull(),
   endTime: datetime('end_time', { fsp: 3 }).notNull(),

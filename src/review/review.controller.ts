@@ -9,6 +9,7 @@ import {
   HttpCode,
   HttpStatus,
   ParseIntPipe,
+  Query,
 } from '@nestjs/common';
 import { ReviewService } from './review.service';
 import {
@@ -19,6 +20,7 @@ import {
 import { CurrentUser } from '../auth/decorators/currentUser.decorator';
 import type { Session } from '../types/auth';
 import { ApiBearerAuth, ApiTags, ApiResponse } from '@nestjs/swagger';
+import { Public } from '../auth/decorators/public.decorator';
 
 @ApiTags('Reviews')
 @ApiBearerAuth()
@@ -112,5 +114,16 @@ export class ReviewController {
     @CurrentUser() user: Session,
   ): Promise<void> {
     await this.reviewService.deleteById(id, user);
+  }
+
+  @Public()
+  @Get('public')
+  async getPublicByUser(
+    @Query('userId') userId?: number,
+  ): Promise<ReviewListResponseDto> {
+    if (userId) {
+      return this.reviewService.getByReviewedUserId(Number(userId));
+    }
+    return this.reviewService.getAllPublic();
   }
 }

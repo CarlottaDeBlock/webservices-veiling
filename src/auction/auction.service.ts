@@ -54,6 +54,7 @@ export class AuctionService {
       .insert(auctions)
       .values({
         requestId: data.requestId,
+        category: data.category,
         startTime: data.startTime,
         endTime: data.endTime,
         status: data.status,

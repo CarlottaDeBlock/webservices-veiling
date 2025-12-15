@@ -61,6 +61,7 @@ export class BidService {
   async getByLot(lotId: number): Promise<BidListResponseDto> {
     const rows = await this.db.query.bids.findMany({
       where: eq(bids.lotId, lotId),
+      orderBy: (b, { desc }) => [desc(b.bidTime)],
       with: {
         bidder: true,
       },
@@ -236,6 +237,24 @@ export class BidService {
         details: { id },
       });
     }
+  }
+
+  async getAllPublic(): Promise<BidListResponseDto> {
+    const rows = await this.db.query.bids.findMany({
+      columns: {
+        bidId: true,
+        lotId: true,
+        auctionId: true,
+        bidderId: true,
+        amount: true,
+        bidTime: true,
+      },
+    });
+    const items: BidResponseDto[] = rows.map((row) => ({
+      ...row,
+      amount: Number(row.amount),
+    }));
+    return { items };
   }
 
   constructor(

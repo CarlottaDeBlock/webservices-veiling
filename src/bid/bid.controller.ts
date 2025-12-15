@@ -9,6 +9,7 @@ import {
   Delete,
   Put,
   ParseIntPipe,
+  Query,
 } from '@nestjs/common';
 import {
   BidListResponseDto,
@@ -22,6 +23,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/currentUser.decorator';
 import type { Session } from '../types/auth';
 import { ApiBearerAuth, ApiTags, ApiResponse } from '@nestjs/swagger';
+import { Public } from '../auth/decorators/public.decorator';
 
 @ApiTags('Bids')
 @ApiBearerAuth()
@@ -150,5 +152,14 @@ export class BidController {
     @CurrentUser() user: Session,
   ): Promise<void> {
     await this.bidService.deleteById(id, user);
+  }
+
+  @Public()
+  @Get('public')
+  getPublicByLot(@Query('lotId') lotId?: number): Promise<BidListResponseDto> {
+    if (lotId) {
+      return this.bidService.getByLot(Number(lotId));
+    }
+    return this.bidService.getAllPublic();
   }
 }
