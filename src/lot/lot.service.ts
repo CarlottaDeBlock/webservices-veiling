@@ -35,7 +35,6 @@ export class LotService {
     const items: LotResponseDto[] = rows.map((row) => ({
       lotId: row.lotId,
       auctionId: row.auctionId,
-      requestId: row.requestId,
       requesterId: row.requesterId,
       title: row.title,
       description: row.description,
@@ -60,6 +59,7 @@ export class LotService {
     const lot = await this.db.query.lots.findFirst({
       where: eq(lots.lotId, id),
       with: {
+        requester: true,
         bids: {
           with: {
             bidder: true,
@@ -91,9 +91,9 @@ export class LotService {
     return {
       lotId: lot.lotId,
       auctionId: lot.auctionId,
-      requestId: lot.requestId,
       requesterId: lot.requesterId,
       title: lot.title,
+      requester: lot.requester,
       description: lot.description,
       startTime: lot.startTime,
       endTime: lot.endTime,
@@ -114,21 +114,20 @@ export class LotService {
   async create(data: CreateLotDto): Promise<LotResponseDto> {
     const [inserted] = await this.db
       .insert(lots)
-      .values({
+      .values(<typeof lots.$inferInsert>{
         auctionId: data.auctionId,
-        requestId: data.requestId,
-        requesterId: data.requesterId,
+        requesterId: data.requesterId!,
         title: data.title,
         description: data.description,
         startTime: data.startTime,
         endTime: data.endTime,
-        winnerId: data.winnerId,
+        winnerId: null,
         category: data.category,
         reservedPrice: data.reservedPrice,
-        buyPrice: data.buyPrice,
+        buyPrice: data.buyPrice ?? null,
         startBid: data.startBid,
-        status: data.status,
-        extraInformation: data.extraInformation,
+        status: data.status!,
+        extraInformation: data.extraInformation ?? null,
         isReversed: data.isReversed,
         canBidHigher: data.canBidHigher,
       })
@@ -141,7 +140,6 @@ export class LotService {
     await this.db
       .update(lots)
       .set({
-        requestId: data.requestId,
         requesterId: data.requesterId,
         title: data.title,
         description: data.description,
@@ -181,7 +179,6 @@ export class LotService {
     return favorites.map((fav) => ({
       lotId: fav.lot.lotId,
       auctionId: fav.lot.auctionId,
-      requestId: fav.lot.requestId,
       requesterId: fav.lot.requesterId,
       title: fav.lot.title,
       description: fav.lot.description,
@@ -216,5 +213,55 @@ export class LotService {
           eq(userFavoriteLots.lotId, lotId),
         ),
       );
+  }
+
+  async toggleFavorite(userId: number, lotId: number) {
+    const existing = await this.db.query.userFavoriteLots.findFirst({
+      where: and(
+        eq(userFavoriteLots.userId, userId),
+        eq(userFavoriteLots.lotId, lotId),
+      ),
+    });
+
+    if (existing) {
+      await this.db
+        .delete(userFavoriteLots)
+        .where(
+          and(
+            eq(userFavoriteLots.userId, userId),
+            eq(userFavoriteLots.lotId, lotId),
+          ),
+        );
+
+      return { lotId, isFavorite: false };
+    }
+
+    await this.db.insert(userFavoriteLots).values({ userId, lotId });
+    return { lotId, isFavorite: true };
+  }
+
+  async getFavoritesForUser(userId: number) {
+    const rows = await this.db.query.userFavoriteLots.findMany({
+      where: eq(userFavoriteLots.userId, userId),
+      with: {
+        lot: {
+          with: {
+            auction: true,
+          },
+        },
+      },
+    });
+
+    return {
+      items: rows.map((row) => ({
+        lotId: row.lot.lotId,
+        title: row.lot.title,
+        category: row.lot.category,
+        status: row.lot.status,
+        auctionId: row.lot.auctionId,
+        startTime: row.lot.startTime,
+        endTime: row.lot.endTime,
+      })),
+    };
   }
 }

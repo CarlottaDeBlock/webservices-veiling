@@ -60,6 +60,7 @@ export class ReviewService {
   }
 
   async getByReviewedUserId(userId: number): Promise<ReviewListResponseDto> {
+    console.log('getByReviewedUserId called with userId:', userId);
     const rows = await this.db.query.reviews.findMany({
       where: eq(reviews.reviewedUserId, userId),
       orderBy: [desc(reviews.createdAt)],

@@ -23,7 +23,10 @@ export const auctions = mysqlTable('auctions', {
     'Rollend Materiaal',
     'Vastgoed',
   ]).notNull(),
-  requestId: int('request_id', { unsigned: true }).notNull(),
+  title: varchar('title', { length: 255 }).notNull(),
+  requesterId: int('requester_id', { unsigned: true })
+    .references(() => users.userId, { onDelete: 'no action' })
+    .notNull(),
   startTime: datetime('start_time', { fsp: 3 }).notNull(),
   endTime: datetime('end_time', { fsp: 3 }).notNull(),
   status: mysqlEnum('status', ['open', 'closed', 'cancelled']).notNull(),
@@ -37,7 +40,6 @@ export const lots = mysqlTable('lot', {
   auctionId: int('auction_id', { unsigned: true })
     .references(() => auctions.auctionId, { onDelete: 'cascade' })
     .notNull(),
-  requestId: int('request_id', { unsigned: true }).notNull(),
   requesterId: int('requester_id', { unsigned: true })
     .references(() => users.userId, { onDelete: 'no action' })
     .notNull(),

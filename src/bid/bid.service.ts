@@ -59,6 +59,7 @@ export class BidService {
   }
 
   async getByLot(lotId: number): Promise<BidListResponseDto> {
+    console.log('getByLot called with lotId:', lotId);
     const rows = await this.db.query.bids.findMany({
       where: eq(bids.lotId, lotId),
       orderBy: (b, { desc }) => [desc(b.bidTime)],

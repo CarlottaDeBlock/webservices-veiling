@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsNumber } from 'nestjs-swagger-dto';
+import { IsDate, IsOptional } from 'class-validator';
 
 export type AuctionStatus = 'open' | 'closed' | 'cancelled';
 export type AuctionCategory =
@@ -11,16 +12,18 @@ export type AuctionCategory =
 
 export class CreateAuctionRequestDto {
   @IsNumber({
-    name: 'requestId',
-    description: 'ID of the related request',
+    name: 'requesterId',
+    description: 'ID of the requester (user)',
     min: 1,
+    format: 'int32',
     type: 'integer',
   })
+  @IsOptional()
   @ApiProperty({
-    example: 10,
-    description: 'ID of the related request',
+    example: 1,
+    description: 'ID of the related requester (user)',
   })
-  requestId: number;
+  requesterId?: number;
 
   @IsString({
     name: 'category',
@@ -34,10 +37,7 @@ export class CreateAuctionRequestDto {
   category: AuctionCategory;
 
   @Type(() => Date)
-  @IsString({
-    name: 'startTime',
-    description: 'Auction start time in ISO format',
-  })
+  @IsDate()
   @ApiProperty({
     example: '2025-09-12T08:00:00.000Z',
     description: 'Start time of the auction',
@@ -45,10 +45,7 @@ export class CreateAuctionRequestDto {
   startTime: Date;
 
   @Type(() => Date)
-  @IsString({
-    name: 'endTime',
-    description: 'Auction end time in ISO format',
-  })
+  @IsDate()
   @ApiProperty({
     example: '2025-09-13T08:00:00.000Z',
     description: 'End time of the auction',
@@ -56,15 +53,27 @@ export class CreateAuctionRequestDto {
   endTime: Date;
 
   @IsString({
+    name: 'title',
+    description: 'Title of the auction',
+    maxLength: 255,
+  })
+  @ApiProperty({
+    example: 'Transport auction ',
+    description: 'Title of the auction',
+  })
+  title: string;
+
+  @IsString({
     name: 'status',
     description: 'Status of the auction',
   })
+  @IsOptional()
   @ApiProperty({
     example: 'open',
     description: 'Status of the auction',
     enum: ['open', 'closed', 'cancelled'],
   })
-  status: AuctionStatus;
+  status?: AuctionStatus;
 }
 
 export class AuctionResponseDto extends CreateAuctionRequestDto {

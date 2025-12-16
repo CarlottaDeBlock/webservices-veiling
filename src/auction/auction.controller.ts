@@ -20,6 +20,7 @@ import { Role } from '../auth/roles';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Public } from '../auth/decorators/public.decorator';
 import { ApiBearerAuth, ApiTags, ApiResponse } from '@nestjs/swagger';
+import { CurrentUser } from '../auth/decorators/currentUser.decorator';
 
 @ApiTags('Auctions')
 @ApiBearerAuth()
@@ -73,8 +74,25 @@ export class AuctionController {
   @HttpCode(HttpStatus.CREATED)
   async create(
     @Body() createAuctionDto: CreateAuctionRequestDto,
+    @CurrentUser() user: { id: number },
   ): Promise<AuctionResponseDto> {
-    return this.auctionService.create(createAuctionDto);
+    const now = new Date();
+    const start = createAuctionDto.startTime;
+    const end = createAuctionDto.endTime;
+
+    let status: 'open' | 'closed';
+    if (now < start) {
+      status = 'closed';
+    } else if (now >= start && now <= end) {
+      status = 'open';
+    } else {
+      status = 'closed';
+    }
+    return this.auctionService.create({
+      ...createAuctionDto,
+      requesterId: user.id,
+      status,
+    });
   }
 
   @ApiResponse({
@@ -95,8 +113,26 @@ export class AuctionController {
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateAuctionDto: CreateAuctionRequestDto,
+    @CurrentUser() user: { id: number },
   ): Promise<AuctionResponseDto> {
-    return this.auctionService.updateById(id, updateAuctionDto);
+    const now = new Date();
+    const start = updateAuctionDto.startTime;
+    const end = updateAuctionDto.endTime;
+
+    let status: 'open' | 'closed';
+    if (now < start) {
+      status = 'closed';
+    } else if (now >= start && now <= end) {
+      status = 'open';
+    } else {
+      status = 'closed';
+    }
+
+    return this.auctionService.updateById(id, {
+      ...updateAuctionDto,
+      requesterId: user.id,
+      status,
+    });
   }
 
   @ApiResponse({

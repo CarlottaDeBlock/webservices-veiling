@@ -71,7 +71,6 @@ describe('Lots', () => {
   describe('POST /api/lots', () => {
     const payload = {
       auctionId: 1,
-      requestId: 3,
       requesterId: 1,
       title: 'New lot',
       description: 'Some description',

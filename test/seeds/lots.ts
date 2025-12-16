@@ -5,7 +5,6 @@ export const LOTS_SEED: (typeof lots.$inferInsert)[] = [
   {
     lotId: 1,
     auctionId: 1,
-    requestId: 1,
     requesterId: 1,
     title: 'Transport 50 beer kegs',
     description: 'From Ghent to Brussels',
@@ -25,7 +24,6 @@ export const LOTS_SEED: (typeof lots.$inferInsert)[] = [
   {
     lotId: 2,
     auctionId: 1,
-    requestId: 2,
     requesterId: 2,
     title: 'Warehouse handling',
     description: 'Load and unload pallets',

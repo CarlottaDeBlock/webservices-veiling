@@ -23,7 +23,6 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/currentUser.decorator';
 import type { Session } from '../types/auth';
 import { ApiBearerAuth, ApiTags, ApiResponse } from '@nestjs/swagger';
-import { Public } from '../auth/decorators/public.decorator';
 
 @ApiTags('Bids')
 @ApiBearerAuth()
@@ -41,7 +40,17 @@ export class BidController {
     type: BidListResponseDto,
   })
   @Get()
-  async getAll(@CurrentUser() user: Session): Promise<BidListResponseDto> {
+  async getAll(
+    @CurrentUser() user: Session,
+    @Query('lotId') lotId?: string,
+  ): Promise<BidListResponseDto> {
+    if (lotId) {
+      const parsed = Number(lotId);
+      if (!parsed || Number.isNaN(parsed) || parsed < 1) {
+        return { items: [] };
+      }
+      return this.bidService.getByLot(parsed);
+    }
     return this.bidService.getAll(user);
   }
 
@@ -152,14 +161,5 @@ export class BidController {
     @CurrentUser() user: Session,
   ): Promise<void> {
     await this.bidService.deleteById(id, user);
-  }
-
-  @Public()
-  @Get('public')
-  getPublicByLot(@Query('lotId') lotId?: number): Promise<BidListResponseDto> {
-    if (lotId) {
-      return this.bidService.getByLot(Number(lotId));
-    }
-    return this.bidService.getAllPublic();
   }
 }

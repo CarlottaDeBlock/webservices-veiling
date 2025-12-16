@@ -53,11 +53,12 @@ export class AuctionService {
     const [inserted] = await this.db
       .insert(auctions)
       .values({
-        requestId: data.requestId,
+        requesterId: data.requesterId!,
+        title: data.title,
         category: data.category,
         startTime: data.startTime,
         endTime: data.endTime,
-        status: data.status,
+        status: data.status!,
       })
       .$returningId();
 
@@ -71,7 +72,7 @@ export class AuctionService {
     await this.db
       .update(auctions)
       .set({
-        requestId: data.requestId,
+        requesterId: data.requesterId,
         startTime: data.startTime,
         endTime: data.endTime,
         status: data.status,

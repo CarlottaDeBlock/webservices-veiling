@@ -20,7 +20,6 @@ import {
 import { CurrentUser } from '../auth/decorators/currentUser.decorator';
 import type { Session } from '../types/auth';
 import { ApiBearerAuth, ApiTags, ApiResponse } from '@nestjs/swagger';
-import { Public } from '../auth/decorators/public.decorator';
 
 @ApiTags('Reviews')
 @ApiBearerAuth()
@@ -38,7 +37,17 @@ export class ReviewController {
     type: ReviewListResponseDto,
   })
   @Get()
-  async getAll(@CurrentUser() user: Session): Promise<ReviewListResponseDto> {
+  async getAll(
+    @CurrentUser() user: Session,
+    @Query('userId') userId?: string,
+  ): Promise<ReviewListResponseDto> {
+    if (userId) {
+      const parsed = Number(userId);
+      if (!parsed || Number.isNaN(parsed) || parsed < 1) {
+        return { items: [] };
+      }
+      return this.reviewService.getByReviewedUserId(parsed);
+    }
     return this.reviewService.getAll(user);
   }
 
@@ -114,16 +123,5 @@ export class ReviewController {
     @CurrentUser() user: Session,
   ): Promise<void> {
     await this.reviewService.deleteById(id, user);
-  }
-
-  @Public()
-  @Get('public')
-  async getPublicByUser(
-    @Query('userId') userId?: number,
-  ): Promise<ReviewListResponseDto> {
-    if (userId) {
-      return this.reviewService.getByReviewedUserId(Number(userId));
-    }
-    return this.reviewService.getAllPublic();
   }
 }

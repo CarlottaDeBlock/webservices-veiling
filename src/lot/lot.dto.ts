@@ -3,6 +3,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { BidWithUserResponseDto } from '../bid/bid.dto';
 import { IsString, IsNumber, IsBoolean } from 'nestjs-swagger-dto';
 import { IsDate, IsOptional } from 'class-validator';
+import { PublicUserResponseDto } from '../user/user.dto';
 
 export class CreateLotDto {
   @IsNumber({
@@ -18,24 +19,15 @@ export class CreateLotDto {
   auctionId: number;
 
   @IsNumber({
-    name: 'requestId',
-    description: 'ID of the related request',
-    min: 1,
-    format: 'int32',
-    type: 'integer',
-  })
-  @ApiProperty({ example: 10, description: 'ID of the related request' })
-  requestId: number;
-
-  @IsNumber({
     name: 'requesterId',
     description: 'ID of the requester (user)',
     min: 1,
     format: 'int32',
     type: 'integer',
   })
+  @IsOptional()
   @ApiProperty({ example: 3, description: 'ID of the requester (user)' })
-  requesterId: number;
+  requesterId?: number;
 
   @IsString({
     name: 'title',
@@ -137,12 +129,13 @@ export class CreateLotDto {
     name: 'status',
     description: 'Status of the lot',
   })
+  @IsOptional()
   @ApiProperty({
     example: 'open',
     description: 'Status of the lot',
     enum: ['open', 'closed', 'cancelled'],
   })
-  status: 'open' | 'closed' | 'cancelled';
+  status?: 'open' | 'closed' | 'cancelled';
 
   @IsString({
     name: 'extraInformation',
@@ -201,4 +194,46 @@ export class LotDetailResponseDto extends LotResponseDto {
     description: 'Bids placed on this lot',
   })
   bids: BidWithUserResponseDto[];
+
+  @ApiProperty({
+    description: 'Public info of the requester (aanbieder)',
+    type: () => PublicUserResponseDto,
+  })
+  requester: PublicUserResponseDto;
+}
+
+export class FavoriteLotToggleResponseDto {
+  @ApiProperty()
+  lotId: number;
+
+  @ApiProperty()
+  isFavorite: boolean;
+}
+
+export class FavoriteLotSummaryDto {
+  @ApiProperty()
+  lotId: number;
+
+  @ApiProperty()
+  title: string;
+
+  @ApiProperty()
+  category: string;
+
+  @ApiProperty()
+  status: string;
+
+  @ApiProperty()
+  auctionId: number;
+
+  @ApiProperty()
+  startTime: Date;
+
+  @ApiProperty()
+  endTime: Date;
+}
+
+export class FavoriteLotListDto {
+  @ApiProperty({ type: () => [FavoriteLotSummaryDto] })
+  items: FavoriteLotSummaryDto[];
 }

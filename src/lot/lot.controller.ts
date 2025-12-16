@@ -21,6 +21,9 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '../auth/roles';
 import { Public } from '../auth/decorators/public.decorator';
 import { ApiBearerAuth, ApiTags, ApiResponse } from '@nestjs/swagger';
+import { CurrentUser } from '../auth/decorators/currentUser.decorator';
+import type { Session } from '../types/auth';
+import { FavoriteLotToggleResponseDto, FavoriteLotListDto } from './lot.dto';
 
 @ApiTags('Lots')
 @ApiBearerAuth()
@@ -72,8 +75,27 @@ export class LotController {
   @Post()
   @Roles(Role.PROVIDER, Role.ADMIN)
   @HttpCode(HttpStatus.CREATED)
-  async create(@Body() createLotDto: CreateLotDto): Promise<LotResponseDto> {
-    return this.lotService.create(createLotDto);
+  async create(
+    @Body() createLotDto: CreateLotDto,
+    @CurrentUser() user: { id: number },
+  ): Promise<LotResponseDto> {
+    const now = new Date();
+    const start = createLotDto.startTime;
+    const end = createLotDto.endTime;
+
+    let status: 'open' | 'closed';
+    if (now < start) {
+      status = 'closed';
+    } else if (now >= start && now <= end) {
+      status = 'open';
+    } else {
+      status = 'closed';
+    }
+    return this.lotService.create({
+      ...createLotDto,
+      requesterId: user.id,
+      status,
+    });
   }
 
   @ApiResponse({
@@ -94,8 +116,26 @@ export class LotController {
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateLotDto: CreateLotDto,
+    @CurrentUser() user: { id: number },
   ): Promise<LotResponseDto> {
-    return this.lotService.updateById(id, updateLotDto);
+    const now = new Date();
+    const start = updateLotDto.startTime;
+    const end = updateLotDto.endTime;
+
+    let status: 'open' | 'closed';
+    if (now < start) {
+      status = 'closed';
+    } else if (now >= start && now <= end) {
+      status = 'open';
+    } else {
+      status = 'closed';
+    }
+
+    return this.lotService.updateById(id, {
+      ...updateLotDto,
+      requesterId: user.id,
+      status,
+    });
   }
 
   @ApiResponse({
@@ -111,5 +151,30 @@ export class LotController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async delete(@Param('id', ParseIntPipe) id: number): Promise<void> {
     await this.lotService.deleteById(id);
+  }
+
+  @Post(':lotId/favorite')
+  @ApiResponse({
+    status: 200,
+    description: 'Toggle favorite status for this lot for the current user',
+    type: FavoriteLotToggleResponseDto,
+  })
+  async toggleFavorite(
+    @Param('lotId', ParseIntPipe) lotId: number,
+    @CurrentUser() user: Session,
+  ): Promise<FavoriteLotToggleResponseDto> {
+    return this.lotService.toggleFavorite(user.id, lotId);
+  }
+
+  @Get('favorites/me')
+  @ApiResponse({
+    status: 200,
+    description: 'Get favorite lots for the current user',
+    type: FavoriteLotListDto,
+  })
+  async getMyFavorites(
+    @CurrentUser() user: Session,
+  ): Promise<FavoriteLotListDto> {
+    return this.lotService.getFavoritesForUser(user.id);
   }
 }
