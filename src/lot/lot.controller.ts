@@ -24,6 +24,7 @@ import { ApiBearerAuth, ApiTags, ApiResponse } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/decorators/currentUser.decorator';
 import type { Session } from '../types/auth';
 import { FavoriteLotToggleResponseDto, FavoriteLotListDto } from './lot.dto';
+import { computeTimeStatus } from '../utils/status';
 
 @ApiTags('Lots')
 @ApiBearerAuth()
@@ -79,18 +80,11 @@ export class LotController {
     @Body() createLotDto: CreateLotDto,
     @CurrentUser() user: { id: number },
   ): Promise<LotResponseDto> {
-    const now = new Date();
-    const start = createLotDto.startTime;
-    const end = createLotDto.endTime;
+    const status = computeTimeStatus(
+      createLotDto.startTime,
+      createLotDto.endTime,
+    );
 
-    let status: 'open' | 'closed';
-    if (now < start) {
-      status = 'closed';
-    } else if (now >= start && now <= end) {
-      status = 'open';
-    } else {
-      status = 'closed';
-    }
     return this.lotService.create({
       ...createLotDto,
       requesterId: user.id,
@@ -118,18 +112,10 @@ export class LotController {
     @Body() updateLotDto: CreateLotDto,
     @CurrentUser() user: { id: number },
   ): Promise<LotResponseDto> {
-    const now = new Date();
-    const start = updateLotDto.startTime;
-    const end = updateLotDto.endTime;
-
-    let status: 'open' | 'closed';
-    if (now < start) {
-      status = 'closed';
-    } else if (now >= start && now <= end) {
-      status = 'open';
-    } else {
-      status = 'closed';
-    }
+    const status = computeTimeStatus(
+      updateLotDto.startTime,
+      updateLotDto.endTime,
+    );
 
     return this.lotService.updateById(id, {
       ...updateLotDto,
@@ -176,5 +162,20 @@ export class LotController {
     @CurrentUser() user: Session,
   ): Promise<FavoriteLotListDto> {
     return this.lotService.getFavoritesForUser(user.id);
+  }
+
+  @Post(':lotId/buy')
+  @Roles(Role.PROVIDER, Role.ADMIN)
+  @HttpCode(HttpStatus.CREATED)
+  @ApiResponse({
+    status: 201,
+    description: 'Buy lot now and create contract',
+  })
+  async buyNow(
+    @Param('lotId', ParseIntPipe) lotId: number,
+    @CurrentUser() user: Session,
+  ) {
+    const result = await this.lotService.buyNow(lotId, user.id);
+    return result;
   }
 }

@@ -61,9 +61,20 @@ describe('Contracts', () => {
       expect(res.statusCode).toBe(200);
       expect(res.body).toMatchObject({
         contractId: 1,
+        auctionId: 1,
         status: 'active',
       });
-      expect(res.body).toHaveProperty('invoice');
+    });
+
+    it('should 200 and include auction and users', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/api/contracts/1')
+        .auth(providerToken, { type: 'bearer' });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toHaveProperty('auction');
+      expect(res.body).toHaveProperty('provider');
+      expect(res.body).toHaveProperty('requester');
     });
 
     it('should 200 for requester of the contract', async () => {
@@ -238,6 +249,16 @@ describe('Contracts', () => {
         .auth(strangerToken, { type: 'bearer' });
 
       expect(res.statusCode).toBe(404);
+    });
+  });
+  describe('GET /api/contracts', () => {
+    it('should 200 and return list', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/api/contracts')
+        .auth(providerToken, { type: 'bearer' });
+
+      expect(res.statusCode).toBe(200);
+      expect(Array.isArray(res.body.items ?? res.body)).toBe(true);
     });
   });
 });

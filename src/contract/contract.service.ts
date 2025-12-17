@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  ForbiddenException,
 } from '@nestjs/common';
 import {
   CreateContractDto,
@@ -14,7 +15,7 @@ import {
   InjectDrizzle,
 } from '../drizzle/drizzle.provider';
 import { eq, or } from 'drizzle-orm';
-import { contracts } from '../drizzle/schema';
+import { contracts, invoices } from '../drizzle/schema';
 import { Role } from '../auth/roles';
 import type { Session } from '../types/auth';
 
@@ -69,25 +70,50 @@ export class ContractService {
     return { items };
   }
 
-  async getById(id: number, session: Session): Promise<ContractResponseDto> {
-    await this.ensureCanAccessContract(id, session);
-    const contract = await this.db.query.contracts.findFirst({
+  async getById(id: number, user: Session): Promise<ContractResponseDto> {
+    const row = await this.db.query.contracts.findFirst({
       where: eq(contracts.contractId, id),
       with: {
         auction: true,
-        provider: true,
-        requester: true,
-        invoice: true,
-        reviews: true,
+        provider: {
+          with: { company: true },
+        },
+        requester: {
+          with: { company: true },
+        },
       },
     });
-    if (!contract) {
+
+    if (!row) {
       throw new NotFoundException({
         message: 'Contract not found',
         details: { id },
       });
     }
-    return contract;
+
+    const isParty = row.providerId === user.id || row.requesterId === user.id;
+    const isAdmin =
+      Array.isArray(user.roles) && user.roles.includes(Role.ADMIN);
+    if (!isParty && !isAdmin) {
+      throw new ForbiddenException({
+        message: 'You are not allowed to view this contract',
+        details: { id },
+      });
+    }
+
+    return {
+      contractId: row.contractId,
+      auctionId: row.auctionId,
+      providerId: row.providerId,
+      requesterId: row.requesterId,
+      agreedPrice: row.agreedPrice,
+      startDate: row.startDate,
+      endDate: row.endDate,
+      status: row.status,
+      auction: row.auction,
+      provider: row.provider,
+      requester: row.requester,
+    } as ContractResponseDto;
   }
 
   async create(data: CreateContractDto): Promise<ContractResponseDto> {
@@ -171,5 +197,52 @@ export class ContractService {
         details: { id },
       });
     }
+  }
+
+  async acceptAndInvoice(
+    contractId: number,
+    user: Session,
+  ): Promise<{ invoiceId: number }> {
+    const contract = await this.db.query.contracts.findFirst({
+      where: eq(contracts.contractId, contractId),
+    });
+
+    if (!contract) {
+      throw new NotFoundException({
+        message: 'Contract not found',
+        details: { contractId },
+      });
+    }
+
+    const isParty =
+      contract.providerId === user.id || contract.requesterId === user.id;
+    if (!isParty) {
+      throw new ForbiddenException({
+        message: 'You are not allowed to accept this contract',
+        details: { contractId },
+      });
+    }
+
+    await this.db
+      .update(contracts)
+      .set({ status: 'active' })
+      .where(eq(contracts.contractId, contractId));
+
+    const now = new Date();
+    const due = new Date(now);
+    due.setDate(due.getDate() + 30);
+
+    const [inserted] = await this.db
+      .insert(invoices)
+      .values(<typeof invoices.$inferInsert>{
+        contractId,
+        amount: contract.agreedPrice,
+        issueDate: now,
+        dueDate: due,
+        status: 'unpaid',
+      })
+      .$returningId();
+
+    return { invoiceId: inserted.invoiceId };
   }
 }

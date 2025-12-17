@@ -1,1 +1,0 @@
-ALTER TABLE `lot` DROP COLUMN `request_id`;

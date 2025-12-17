@@ -6,7 +6,12 @@ import {
   DrizzleAsyncProvider,
 } from '../src/drizzle/drizzle.provider';
 import { clearUsers, seedUsers } from './seeds/users';
-import { loginAdmin, loginStranger, loginUser } from './helpers/login';
+import {
+  loginAdmin,
+  loginStranger,
+  loginRequester,
+  loginUser,
+} from './helpers/login';
 import testAuthHeader from './helpers/testAuthHeader';
 import { clearReviews, seedReviews } from './seeds/reviews';
 import { clearContracts, seedContracts } from './seeds/contracts';
@@ -22,6 +27,7 @@ describe('Reviews', () => {
   let userToken: string;
   let strangerToken: string;
   let adminToken: string;
+  let requesterToken: string;
 
   beforeAll(async () => {
     app = await createTestApp();
@@ -45,6 +51,7 @@ describe('Reviews', () => {
     userToken = await loginUser(app);
     adminToken = await loginAdmin(app);
     strangerToken = await loginStranger(app);
+    requesterToken = await loginRequester(app);
   });
 
   afterAll(async () => {
@@ -116,6 +123,26 @@ describe('Reviews', () => {
       expect(res.statusCode).toBe(404);
     });
 
+    it('should 204', async () => {
+      const create = await request(app.getHttpServer())
+        .post('/api/reviews')
+        .auth(requesterToken, { type: 'bearer' })
+        .send({
+          contractId: 2,
+          reviewedUserId: 2,
+          rating: 4,
+          comment: 'Goed, klein minpuntje',
+        });
+
+      const id = create.body.reviewId;
+
+      const res = await request(app.getHttpServer())
+        .delete(`/api/reviews/${id}`)
+        .auth(requesterToken, { type: 'bearer' });
+
+      expect(res.statusCode).toBe(204);
+    });
+
     testAuthHeader(() => request(app.getHttpServer()).delete(`${url}/1`));
   });
 
@@ -144,6 +171,23 @@ describe('Reviews', () => {
 
       expect(res.statusCode).toBe(200);
       expect(Array.isArray(res.body.items)).toBe(true);
+    });
+  });
+
+  describe('POST /api/reviews', () => {
+    it('POST /api/reviews should 201 and create review', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/api/reviews')
+        .auth(requesterToken, { type: 'bearer' })
+        .send({
+          contractId: 2,
+          reviewedUserId: 2,
+          rating: 5,
+          comment: 'Top samenwerking',
+        });
+
+      expect(res.statusCode).toBe(201);
+      expect(res.body).toHaveProperty('reviewId');
     });
   });
 });

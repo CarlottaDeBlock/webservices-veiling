@@ -48,6 +48,18 @@ describe('Auctions', () => {
       expect(res.statusCode).toBe(200);
       expect(res.body).toMatchObject({
         auctionId: 1,
+        status: 'closed',
+      });
+      expect(res.body).toHaveProperty('lots');
+      expect(res.body).toHaveProperty('bids');
+    });
+
+    it('should 200 and return the requested auction', async () => {
+      const res = await request(app.getHttpServer()).get(`${url}/3`);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toMatchObject({
+        auctionId: 3,
         status: 'open',
       });
       expect(res.body).toHaveProperty('lots');

@@ -66,6 +66,15 @@ describe('Lots', () => {
         ]),
       );
     });
+
+    it('GET /api/lots should 200 and return list', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/api/lots')
+        .auth(userToken, { type: 'bearer' });
+
+      expect(res.statusCode).toBe(200);
+      expect(Array.isArray(res.body.items ?? res.body)).toBe(true);
+    });
   });
 
   describe('POST /api/lots', () => {
@@ -163,6 +172,44 @@ describe('Lots', () => {
         .auth(adminToken, { type: 'bearer' });
 
       expect(res.statusCode).toBe(404);
+    });
+  });
+
+  describe('POST /api/lots/:id/favorite', () => {
+    it('toggles favorite', async () => {
+      const lotId = 1;
+
+      const res1 = await request(app.getHttpServer())
+        .post(`/api/lots/${lotId}/favorite`)
+        .auth(userToken, { type: 'bearer' });
+
+      expect(res1.statusCode).toBe(200);
+      expect(res1.body).toEqual({ lotId, isFavorite: true });
+
+      const res2 = await request(app.getHttpServer())
+        .post(`/api/lots/${lotId}/favorite`)
+        .auth(userToken, { type: 'bearer' });
+
+      expect(res2.statusCode).toBe(200);
+      expect(res2.body).toEqual({ lotId, isFavorite: false });
+    });
+  });
+  describe('GET /api/lots/favorites/me', () => {
+    it('returns favorite list', async () => {
+      const lotId = 2;
+
+      await request(app.getHttpServer())
+        .post(`/api/lots/${lotId}/favorite`)
+        .auth(userToken, { type: 'bearer' });
+
+      const res = await request(app.getHttpServer())
+        .get('/api/lots/favorites/me')
+        .auth(userToken, { type: 'bearer' });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.items ?? res.body).toEqual(
+        expect.arrayContaining([expect.objectContaining({ lotId })]),
+      );
     });
   });
 });

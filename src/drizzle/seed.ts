@@ -25,6 +25,13 @@ async function hashPassword(password: string): Promise<string> {
     memoryCost: auth.memoryCost,
   });
 }
+
+function computeStatus(start: Date, end: Date): 'open' | 'closed' {
+  const now = new Date();
+  if (now >= start && now <= end) return 'open';
+  return 'closed';
+}
+
 async function resetDatabase() {
   console.log('🗑️ Resetting database...');
 
@@ -132,149 +139,205 @@ async function seedAuctions() {
   console.log('🔨 Seeding auctions...');
 
   await db.insert(schema.auctions).values([
+    // VERLEDEN (gesloten)
     {
       auctionId: 1,
       title: 'Auction Transport',
       category: 'Transport',
       requesterId: 1,
-      startTime: new Date('2026-01-08T09:00:00.000Z'),
-      endTime: new Date('2026-01-09T17:00:00.000Z'),
-      status: 'open',
+      startTime: new Date('2025-11-01T08:00:00.000Z'),
+      endTime: new Date('2025-11-05T17:00:00.000Z'),
+      status: computeStatus(
+        new Date('2025-11-01T08:00:00.000Z'),
+        new Date('2025-11-05T17:00:00.000Z'),
+      ),
     },
     {
       auctionId: 2,
       title: 'Auction restaurant',
       category: 'Horeca',
       requesterId: 1,
-      startTime: new Date('2026-01-20T09:00:00.000Z'),
-      endTime: new Date('2026-01-22T17:00:00.000Z'),
-      status: 'open',
+      startTime: new Date('2025-11-10T09:00:00.000Z'),
+      endTime: new Date('2025-11-12T17:00:00.000Z'),
+      status: computeStatus(
+        new Date('2025-11-10T09:00:00.000Z'),
+        new Date('2025-11-12T17:00:00.000Z'),
+      ),
     },
+
+    // NU OPEN (periode rond mid‑december 2025)
     {
       auctionId: 3,
       title: 'Auction autos',
       category: 'Rollend Materiaal',
       requesterId: 1,
-      startTime: new Date('2026-10-23T09:00:00.000Z'),
-      endTime: new Date('2026-11-24T17:00:00.000Z'),
-      status: 'open',
+      startTime: new Date('2025-12-15T08:00:00.000Z'),
+      endTime: new Date('2025-12-20T17:00:00.000Z'),
+      status: computeStatus(
+        new Date('2025-12-15T08:00:00.000Z'),
+        new Date('2025-12-20T17:00:00.000Z'),
+      ),
     },
     {
       auctionId: 4,
       title: 'Auction huis',
       category: 'Vastgoed',
       requesterId: 1,
-      startTime: new Date('2026-01-20T09:00:00.000Z'),
-      endTime: new Date('2026-01-22T17:00:00.000Z'),
-      status: 'closed',
+      startTime: new Date('2025-12-16T09:00:00.000Z'),
+      endTime: new Date('2025-12-22T17:00:00.000Z'),
+      status: computeStatus(
+        new Date('2025-12-16T09:00:00.000Z'),
+        new Date('2025-12-22T17:00:00.000Z'),
+      ),
     },
+
+    // TOEKOMST (nog niet open)
     {
       auctionId: 5,
       title: 'Auction keuken',
       category: 'Horeca',
       requesterId: 1,
-      startTime: new Date('2026-01-20T09:00:00.000Z'),
-      endTime: new Date('2026-01-22T17:00:00.000Z'),
-      status: 'open',
+      startTime: new Date('2026-01-10T09:00:00.000Z'),
+      endTime: new Date('2026-01-12T17:00:00.000Z'),
+      status: computeStatus(
+        new Date('2026-01-10T09:00:00.000Z'),
+        new Date('2026-01-12T17:00:00.000Z'),
+      ),
     },
     {
       auctionId: 6,
       title: 'Auction Vrachtwagen',
       category: 'Rollend Materiaal',
       requesterId: 1,
-      startTime: new Date('2026-10-23T09:00:00.000Z'),
-      endTime: new Date('2026-11-24T17:00:00.000Z'),
-      status: 'open',
+      startTime: new Date('2026-02-01T08:00:00.000Z'),
+      endTime: new Date('2026-02-05T17:00:00.000Z'),
+      status: computeStatus(
+        new Date('2026-02-01T08:00:00.000Z'),
+        new Date('2026-02-05T17:00:00.000Z'),
+      ),
     },
+
+    // nog wat extra mix (een gesloten, een open, een toekomst)
     {
       auctionId: 7,
       title: 'Auction appartement',
       category: 'Vastgoed',
       requesterId: 1,
-      startTime: new Date('2026-01-20T09:00:00.000Z'),
-      endTime: new Date('2026-01-22T17:00:00.000Z'),
-      status: 'closed',
+      startTime: new Date('2025-10-01T09:00:00.000Z'),
+      endTime: new Date('2025-10-05T17:00:00.000Z'),
+      status: computeStatus(
+        new Date('2025-10-01T09:00:00.000Z'),
+        new Date('2025-10-05T17:00:00.000Z'),
+      ),
     },
     {
       auctionId: 8,
       title: 'Auction zaal materiaal',
       category: 'Horeca',
       requesterId: 1,
-      startTime: new Date('2026-01-20T09:00:00.000Z'),
-      endTime: new Date('2026-01-22T17:00:00.000Z'),
-      status: 'open',
+      startTime: new Date('2025-12-10T09:00:00.000Z'),
+      endTime: new Date('2025-12-25T17:00:00.000Z'),
+      status: computeStatus(
+        new Date('2025-12-10T09:00:00.000Z'),
+        new Date('2025-12-25T17:00:00.000Z'),
+      ),
     },
     {
       auctionId: 9,
       title: 'Auction ritten met camions naar Antwerpen',
       category: 'Transport',
       requesterId: 1,
-      startTime: new Date('2026-01-08T09:00:00.000Z'),
-      endTime: new Date('2026-01-09T17:00:00.000Z'),
-      status: 'open',
+      startTime: new Date('2026-03-01T09:00:00.000Z'),
+      endTime: new Date('2026-03-05T17:00:00.000Z'),
+      status: computeStatus(
+        new Date('2026-03-01T09:00:00.000Z'),
+        new Date('2026-03-05T17:00:00.000Z'),
+      ),
     },
+
     {
       auctionId: 10,
       title: 'Auction chef',
       category: 'Horeca',
       requesterId: 1,
-      startTime: new Date('2026-01-20T09:00:00.000Z'),
-      endTime: new Date('2026-01-22T17:00:00.000Z'),
-      status: 'open',
+      startTime: new Date('2025-12-14T09:00:00.000Z'),
+      endTime: new Date('2025-12-18T17:00:00.000Z'),
+      status: computeStatus(
+        new Date('2025-12-14T09:00:00.000Z'),
+        new Date('2025-12-18T17:00:00.000Z'),
+      ),
     },
     {
       auctionId: 11,
       title: 'Auction bestelwagens',
       category: 'Rollend Materiaal',
       requesterId: 1,
-      startTime: new Date('2026-10-23T09:00:00.000Z'),
-      endTime: new Date('2026-11-24T17:00:00.000Z'),
-      status: 'open',
+      startTime: new Date('2026-04-01T09:00:00.000Z'),
+      endTime: new Date('2026-04-10T17:00:00.000Z'),
+      status: computeStatus(
+        new Date('2026-04-01T09:00:00.000Z'),
+        new Date('2026-04-10T17:00:00.000Z'),
+      ),
     },
     {
       auctionId: 12,
       title: 'Auction kantoor',
       category: 'Vastgoed',
       requesterId: 1,
-      startTime: new Date('2026-01-20T09:00:00.000Z'),
-      endTime: new Date('2026-01-22T17:00:00.000Z'),
-      status: 'closed',
+      startTime: new Date('2025-09-01T09:00:00.000Z'),
+      endTime: new Date('2025-09-10T17:00:00.000Z'),
+      status: computeStatus(
+        new Date('2025-09-01T09:00:00.000Z'),
+        new Date('2025-09-10T17:00:00.000Z'),
+      ),
     },
     {
       auctionId: 13,
       title: 'Auction keukengerei',
       category: 'Horeca',
       requesterId: 1,
-      startTime: new Date('2026-01-20T09:00:00.000Z'),
-      endTime: new Date('2026-01-22T17:00:00.000Z'),
-      status: 'open',
+      startTime: new Date('2026-05-01T09:00:00.000Z'),
+      endTime: new Date('2026-05-03T17:00:00.000Z'),
+      status: computeStatus(
+        new Date('2026-05-01T09:00:00.000Z'),
+        new Date('2026-05-03T17:00:00.000Z'),
+      ),
     },
     {
       auctionId: 14,
       title: 'Auction paard en kar',
       category: 'Rollend Materiaal',
       requesterId: 1,
-      startTime: new Date('2026-10-23T09:00:00.000Z'),
-      endTime: new Date('2026-11-24T17:00:00.000Z'),
-      status: 'open',
+      startTime: new Date('2025-12-01T09:00:00.000Z'),
+      endTime: new Date('2025-12-03T17:00:00.000Z'),
+      status: computeStatus(
+        new Date('2025-12-01T09:00:00.000Z'),
+        new Date('2025-12-03T17:00:00.000Z'),
+      ),
     },
     {
       auctionId: 15,
       title: 'Auction meubilair',
       category: 'Vastgoed',
       requesterId: 1,
-      startTime: new Date('2026-01-20T09:00:00.000Z'),
-      endTime: new Date('2026-01-22T17:00:00.000Z'),
-      status: 'closed',
+      startTime: new Date('2026-06-01T09:00:00.000Z'),
+      endTime: new Date('2026-06-10T17:00:00.000Z'),
+      status: computeStatus(
+        new Date('2026-06-01T09:00:00.000Z'),
+        new Date('2026-06-10T17:00:00.000Z'),
+      ),
     },
     {
       auctionId: 16,
-      title: 'Auction tafels en stoelen ',
+      title: 'Auction tafels en stoelen',
       category: 'Horeca',
       requesterId: 1,
-      startTime: new Date('2026-01-20T09:00:00.000Z'),
-      endTime: new Date('2026-01-22T17:00:00.000Z'),
-      status: 'open',
+      startTime: new Date('2025-12-10T09:00:00.000Z'),
+      endTime: new Date('2025-12-19T17:00:00.000Z'),
+      status: computeStatus(
+        new Date('2025-12-10T09:00:00.000Z'),
+        new Date('2025-12-19T17:00:00.000Z'),
+      ),
     },
   ]);
 
@@ -285,41 +348,96 @@ async function seedLots() {
   console.log('📦 Seeding lots...');
 
   await db.insert(schema.lots).values([
+    // Lot binnen auction 3 (open: 15–20 dec 2025)
     {
-      auctionId: 1,
+      auctionId: 3,
       requesterId: 1,
       title: 'Transport 10 pallets Gent → Antwerpen',
       description: 'Verzending van 10 pallets niet-bederfbare goederen.',
-      startTime: new Date('2026-01-10T09:00:00.000Z'),
-      endTime: new Date('2026-01-10T17:00:00.000Z'),
+      startTime: new Date('2025-12-17T09:00:00.000Z'),
+      endTime: new Date('2025-12-19T17:00:00.000Z'),
       winnerId: null,
       category: 'transport',
       reservedPrice: '800.00',
       buyPrice: '1200.00',
       startBid: '500.00',
-      status: 'open',
+      status: computeStatus(
+        new Date('2025-12-17T09:00:00.000Z'),
+        new Date('2025-12-19T17:00:00.000Z'),
+      ),
       extraInformation: 'Laadplaats met dok, heftruck aanwezig.',
       isReversed: true,
       canBidHigher: true,
-      createdAt: new Date('2025-09-12T08:55:15.039Z'),
+      createdAt: new Date('2025-12-10T08:55:15.039Z'),
     },
+
+    // Lot binnen auction 4 (open: 16–22 dec 2025)
     {
-      auctionId: 1,
+      auctionId: 4,
       requesterId: 1,
       title: 'Opslagruimte 3 maanden',
       description: 'Opslag van 20 pallets droge voeding.',
-      startTime: new Date('2026-02-01T08:00:00.000Z'),
-      endTime: new Date('2026-02-05T16:00:00.000Z'),
+      startTime: new Date('2025-12-17T08:00:00.000Z'),
+      endTime: new Date('2025-12-20T16:00:00.000Z'),
       winnerId: null,
       category: 'storage',
       reservedPrice: '1500.00',
       buyPrice: null,
       startBid: '900.00',
-      status: 'open',
+      status: computeStatus(
+        new Date('2025-12-17T08:00:00.000Z'),
+        new Date('2025-12-20T16:00:00.000Z'),
+      ),
       extraInformation: 'Magazijn met temperatuurcontrole niet nodig.',
       isReversed: true,
       canBidHigher: true,
-      createdAt: new Date('2025-09-12T08:55:15.039Z'),
+      createdAt: new Date('2025-12-11T08:55:15.039Z'),
+    },
+
+    // Lot binnen auction 1 (verleden: 1–5 nov 2025)
+    {
+      auctionId: 1,
+      requesterId: 1,
+      title: 'Historische rit met vrachtwagen',
+      description: 'Eenmalige rit, reeds afgelopen.',
+      startTime: new Date('2025-11-02T09:00:00.000Z'),
+      endTime: new Date('2025-11-02T15:00:00.000Z'),
+      winnerId: null,
+      category: 'transport',
+      reservedPrice: '600.00',
+      buyPrice: '900.00',
+      startBid: '400.00',
+      status: computeStatus(
+        new Date('2025-11-02T09:00:00.000Z'),
+        new Date('2025-11-02T15:00:00.000Z'),
+      ),
+      extraInformation: 'Traject reeds uitgevoerd.',
+      isReversed: false,
+      canBidHigher: true,
+      createdAt: new Date('2025-10-20T08:55:15.039Z'),
+    },
+
+    // Lot binnen auction 5 (toekomst: 10–12 jan 2026)
+    {
+      auctionId: 5,
+      requesterId: 1,
+      title: 'Keukeninstallatie in nieuw restaurant',
+      description: 'Volledige installatie van een horecakeuken.',
+      startTime: new Date('2026-01-11T09:00:00.000Z'),
+      endTime: new Date('2026-01-11T17:00:00.000Z'),
+      winnerId: null,
+      category: 'horeca',
+      reservedPrice: '5000.00',
+      buyPrice: null,
+      startBid: '3000.00',
+      status: computeStatus(
+        new Date('2026-01-11T09:00:00.000Z'),
+        new Date('2026-01-11T17:00:00.000Z'),
+      ),
+      extraInformation: 'Inclusief montage en afwerking.',
+      isReversed: false,
+      canBidHigher: true,
+      createdAt: new Date('2025-12-15T08:55:15.039Z'),
     },
   ]);
 

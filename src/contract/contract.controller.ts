@@ -116,4 +116,13 @@ export class ContractController {
   ): Promise<void> {
     await this.contractService.deleteById(id, user);
   }
+
+  @Post(':id/accept')
+  @HttpCode(HttpStatus.CREATED)
+  async acceptContract(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: Session,
+  ) {
+    return this.contractService.acceptAndInvoice(id, user);
+  }
 }

@@ -21,6 +21,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { Public } from '../auth/decorators/public.decorator';
 import { ApiBearerAuth, ApiTags, ApiResponse } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/decorators/currentUser.decorator';
+import { computeTimeStatus } from '../utils/status';
 
 @ApiTags('Auctions')
 @ApiBearerAuth()
@@ -76,18 +77,11 @@ export class AuctionController {
     @Body() createAuctionDto: CreateAuctionRequestDto,
     @CurrentUser() user: { id: number },
   ): Promise<AuctionResponseDto> {
-    const now = new Date();
-    const start = createAuctionDto.startTime;
-    const end = createAuctionDto.endTime;
+    const status = computeTimeStatus(
+      createAuctionDto.startTime,
+      createAuctionDto.endTime,
+    );
 
-    let status: 'open' | 'closed';
-    if (now < start) {
-      status = 'closed';
-    } else if (now >= start && now <= end) {
-      status = 'open';
-    } else {
-      status = 'closed';
-    }
     return this.auctionService.create({
       ...createAuctionDto,
       requesterId: user.id,
@@ -115,18 +109,10 @@ export class AuctionController {
     @Body() updateAuctionDto: CreateAuctionRequestDto,
     @CurrentUser() user: { id: number },
   ): Promise<AuctionResponseDto> {
-    const now = new Date();
-    const start = updateAuctionDto.startTime;
-    const end = updateAuctionDto.endTime;
-
-    let status: 'open' | 'closed';
-    if (now < start) {
-      status = 'closed';
-    } else if (now >= start && now <= end) {
-      status = 'open';
-    } else {
-      status = 'closed';
-    }
+    const status = computeTimeStatus(
+      updateAuctionDto.startTime,
+      updateAuctionDto.endTime,
+    );
 
     return this.auctionService.updateById(id, {
       ...updateAuctionDto,
@@ -141,7 +127,7 @@ export class AuctionController {
   })
   @ApiResponse({
     status: 404,
-    description: 'Auction nogt found',
+    description: 'Auction not found',
   })
   @Delete(':id')
   @Roles(Role.PROVIDER, Role.ADMIN)

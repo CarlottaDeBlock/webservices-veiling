@@ -1,1 +1,0 @@
-ALTER TABLE `auctions` ADD CONSTRAINT `auctions_requester_id_user_user_id_fk` FOREIGN KEY (`requester_id`) REFERENCES `user`(`user_id`) ON DELETE no action ON UPDATE no action;

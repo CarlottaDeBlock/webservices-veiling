@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import {
   CreateLotDto,
   LotDetailResponseDto,
@@ -9,8 +13,15 @@ import {
   type DatabaseProvider,
   InjectDrizzle,
 } from '../drizzle/drizzle.provider';
-import { eq, InferSelectModel, and } from 'drizzle-orm';
-import { bids, lots, userFavoriteLots, users } from '../drizzle/schema';
+import { eq, InferSelectModel, and, lte } from 'drizzle-orm';
+import {
+  bids,
+  contracts,
+  lots,
+  auctions,
+  userFavoriteLots,
+  users,
+} from '../drizzle/schema';
 import { BidWithUserResponseDto } from '../bid/bid.dto';
 
 type BidRow = InferSelectModel<typeof bids> & {
@@ -112,6 +123,7 @@ export class LotService {
   }
 
   async create(data: CreateLotDto): Promise<LotResponseDto> {
+    await this.ensureWithinAuctionPeriod(data);
     const [inserted] = await this.db
       .insert(lots)
       .values(<typeof lots.$inferInsert>{
@@ -137,6 +149,8 @@ export class LotService {
   }
 
   async updateById(id: number, data: CreateLotDto): Promise<LotResponseDto> {
+    await this.ensureWithinAuctionPeriod(data);
+
     await this.db
       .update(lots)
       .set({
@@ -263,5 +277,168 @@ export class LotService {
         endTime: row.lot.endTime,
       })),
     };
+  }
+
+  private async ensureWithinAuctionPeriod(data: CreateLotDto) {
+    const auction = await this.db.query.auctions.findFirst({
+      where: eq(auctions.auctionId, data.auctionId),
+    });
+
+    if (!auction) {
+      throw new NotFoundException({
+        message: 'Auction not found for lot',
+        details: { auctionId: data.auctionId },
+      });
+    }
+
+    const auctionStart = new Date(auction.startTime);
+    const auctionEnd = new Date(auction.endTime);
+    const lotStart = new Date(data.startTime);
+    const lotEnd = new Date(data.endTime);
+
+    if (lotStart < auctionStart || lotEnd > auctionEnd) {
+      throw new BadRequestException({
+        message: 'Lot time must be within auction period',
+        details: {
+          auctionId: data.auctionId,
+          auctionPeriod: {
+            startTime: auctionStart.toISOString(),
+            endTime: auctionEnd.toISOString(),
+          },
+          lot: {
+            startTime: lotStart.toISOString(),
+            endTime: lotEnd.toISOString(),
+          },
+        },
+      });
+    }
+  }
+
+  async buyNow(
+    lotId: number,
+    buyerId: number,
+  ): Promise<{ contractId: number }> {
+    const lot = await this.db.query.lots.findFirst({
+      where: eq(lots.lotId, lotId),
+      with: { auction: true },
+    });
+
+    if (!lot) {
+      throw new NotFoundException({
+        message: 'Lot not found',
+        details: { lotId },
+      });
+    }
+
+    if (!lot.buyPrice) {
+      throw new BadRequestException({
+        message: 'Lot has no buy-now price',
+        details: { lotId },
+      });
+    }
+
+    if (lot.status !== 'open') {
+      throw new BadRequestException({
+        message: 'Lot is not open',
+        details: { status: lot.status },
+      });
+    }
+
+    const now = new Date();
+    if (now < lot.startTime || now > lot.endTime) {
+      throw new BadRequestException({
+        message: 'Lot is not in active period',
+        details: { lotId, startTime: lot.startTime, endTime: lot.endTime },
+      });
+    }
+
+    // 1) lot sluiten + winnaar zetten
+    await this.db
+      .update(lots)
+      .set({
+        status: 'closed',
+        winnerId: buyerId,
+      })
+      .where(and(eq(lots.lotId, lotId), eq(lots.status, 'open')));
+
+    // 2) contract aanmaken
+    const [inserted] = await this.db
+      .insert(contracts)
+      .values(<typeof contracts.$inferInsert>{
+        auctionId: lot.auctionId,
+        providerId: buyerId,
+        requesterId: lot.requesterId,
+        agreedPrice: lot.buyPrice,
+        startDate: now,
+        endDate: lot.endTime,
+        status: 'active',
+      })
+      .$returningId();
+
+    return { contractId: inserted.contractId };
+  }
+
+  async closeLot(lotId: number) {
+    const lot = await this.db.query.lots.findFirst({
+      where: eq(lots.lotId, lotId),
+    });
+    if (!lot || lot.status !== 'open') return;
+
+    const highestBid = await this.db.query.bids.findFirst({
+      where: eq(bids.lotId, lotId),
+      orderBy: (b, { desc }) => [desc(b.amount), desc(b.bidTime)],
+    });
+
+    if (!highestBid) {
+      await this.db
+        .update(lots)
+        .set({ status: 'cancelled', winnerId: null })
+        .where(eq(lots.lotId, lotId));
+      return;
+    }
+
+    const bidAmount = Number(highestBid?.amount);
+    const reserved = Number(lot.reservedPrice);
+
+    if (bidAmount < reserved) {
+      await this.db
+        .update(lots)
+        .set({ status: 'cancelled', winnerId: null })
+        .where(eq(lots.lotId, lotId));
+      return;
+    }
+
+    await this.db
+      .update(lots)
+      .set({ status: 'closed', winnerId: highestBid.bidderId })
+      .where(eq(lots.lotId, lotId));
+
+    await this.db
+      .insert(contracts)
+      .values({
+        auctionId: lot.auctionId,
+        providerId: highestBid.bidderId,
+        requesterId: lot.requesterId,
+        agreedPrice: bidAmount.toFixed(2),
+        startDate: new Date(),
+        endDate: new Date(), // later aanpassen
+        status: 'pending',
+      })
+      .$returningId();
+  }
+
+  async closeExpiredLots() {
+    const now = new Date();
+    const expiredLots = await this.db.query.lots.findMany({
+      where: and(eq(lots.status, 'open'), lte(lots.endTime, now)),
+      with: {
+        auction: true,
+        requester: true,
+      },
+    });
+
+    for (const lot of expiredLots) {
+      await this.closeLot(lot.lotId);
+    }
   }
 }

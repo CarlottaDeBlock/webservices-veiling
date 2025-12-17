@@ -160,6 +160,25 @@ describe('Bids', () => {
       expect(res.body.details.body).toHaveProperty('amount');
     });
 
+    it('should 201 and create bid for authenticated user', async () => {
+      const res = await request(app.getHttpServer())
+        .post(url)
+        .auth(userToken, { type: 'bearer' })
+        .send({
+          auctionId: 1,
+          lotId: 1,
+          amount: 220.0, // hoger dan het bod uit beforeAll
+        });
+
+      expect(res.statusCode).toBe(201);
+      expect(res.body).toMatchObject({
+        bidId: expect.any(Number),
+        auctionId: 1,
+        lotId: 1,
+        amount: 220.0,
+      });
+    });
+
     it('should 201 and create a new bid on open lot', async () => {
       const res = await request(app.getHttpServer())
         .post(url)
@@ -185,7 +204,7 @@ describe('Bids', () => {
         .send({
           auctionId: 1,
           lotId: 1,
-          amount: 1.0,
+          amount: 100.0,
         });
       expect(res.statusCode).toBe(400);
       expect(res.body.details.body).toHaveProperty('amount');
@@ -212,6 +231,20 @@ describe('Bids', () => {
           amount: 100.0,
         });
       expect(res.statusCode).toBe(400);
+    });
+
+    it('should 400 when amount below last bid', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/api/bids')
+        .auth(userToken, { type: 'bearer' })
+        .send({
+          lotId: 1,
+          amount: 10, // duidelijk te laag tov seeded bids
+        });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body).toHaveProperty('message');
+      expect(JSON.stringify(res.body)).toContain('Amount');
     });
 
     testAuthHeader(() =>
@@ -291,6 +324,14 @@ describe('Bids', () => {
 
       expect(res.statusCode).toBe(404);
     });
+
+    it('should 404 for non-existing bid', async () => {
+      const res = await request(app.getHttpServer())
+        .delete('/api/bids/99999')
+        .auth(adminToken, { type: 'bearer' });
+
+      expect(res.statusCode).toBe(404);
+    });
   });
 
   describe('GET /api/bids', () => {
@@ -311,6 +352,14 @@ describe('Bids', () => {
 
       expect(res.statusCode).toBe(200);
       expect(res.body.items).toEqual([]);
+    });
+    it('should 200 and return list', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/api/bids')
+        .auth(adminToken, { type: 'bearer' });
+
+      expect(res.statusCode).toBe(200);
+      expect(Array.isArray(res.body.items ?? res.body)).toBe(true);
     });
   });
 });
